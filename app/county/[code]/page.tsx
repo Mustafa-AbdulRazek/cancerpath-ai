@@ -7,7 +7,7 @@ import Simulator from "@/components/Simulator";
 import { Card, Chip, SourceBadge, Sparkline } from "@/components/ui";
 import { actionsFor, THL_2016_URL } from "@/lib/actions";
 import {
-  EXCLUDED, SERIES_NOTES, countyByCode, counties, data, findingsFor, fmt, fmtU, nationalSeries, nationalValue, rank, series, stageMeta, stageScores, STAGES, value, weakestStage, latestYear,
+  EXCLUDED, SCREEN_BAND, SERIES_NOTES, countyByCode, counties, data, findingsFor, fmt, fmtU, nationalSeries, nationalValue, rank, series, stageMeta, stageScores, STAGES, value, weakestStage, latestYear,
 } from "@/lib/analysis";
 
 export function generateStaticParams() {
@@ -26,13 +26,14 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
   const stages = stageScores(code);
   const weak = weakestStage(code);
   const findings = findingsFor(code);
-  const actions = actionsFor(code, 4);
+  const actions = actionsFor(code, 5);
   const weakClear = weak && weak.score < -0.35;
 
   const programmes = ["screen_cervical", "screen_colorectal", "screen_breast"]
     .map((k) => {
       const f = findings.find((x) => x.key === k)!;
-      return { key: k, label: f.ind.short, current: f.value ?? 0, best: f.best?.[1] ?? 0, target: 80, source: `THL Sotkanet ${f.ind.id}, ${f.year}` };
+      const band = SCREEN_BAND[k];
+      return { key: k, label: f.ind.short, current: f.value ?? 0, best: f.best?.[1] ?? 0, target: 80, source: `THL Sotkanet ${f.ind.id}, ${f.year}`, eligible: data.eligible?.[code]?.[band], bandLabel: data.eligibleMeta?.bands[band].label, intervalYears: data.eligibleMeta?.bands[band].intervalYears };
     })
     .sort((a, b) => a.current - b.current);
 
@@ -138,7 +139,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
 
       <section>
         <div className="mb-2 flex items-baseline justify-between">
-          <h2 className="text-lg font-bold">90-day action plan for {c.name}</h2>
+          <h2 className="text-lg font-bold">90-day action plan for {c.name} (ranked by gap size and people reached)</h2>
           <Link href="/actions" className="text-sm text-sky-700 hover:underline print:hidden">Full action library →</Link>
         </div>
         <div className="grid gap-4 md:grid-cols-2">

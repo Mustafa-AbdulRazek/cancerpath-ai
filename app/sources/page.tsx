@@ -74,6 +74,8 @@ export default function SourcesPage() {
           {Object.values(data.sources).map((s) => <li key={s.name}><a className="underline" href={s.url}>{s.name}</a> · {s.license}</li>)}
           <li>Kansallinen syöpästrategia 2026–2035 and Toimeenpanon tiekartta 2026–2031 (challenge resources from AstraZeneca / Junction)</li>
           <li>THL Ohjaus 21/2016: Hoitoonpääsyn seuranta syövän hoidossa</li>
+          <li><a className="underline" href={data.eligibleMeta.url}>{data.eligibleMeta.source}</a> ({data.eligibleMeta.year}). Used for impact estimates: {Object.values(data.eligibleMeta.bands).map((b) => `${b.label}, every ${b.intervalYears} years`).join("; ")}. Eligible population is used as an approximation of invitees per round.</li>
+          <li>Resource lines on actions are team estimates, not costed budgets.</li>
         </ul>
       </Card>
     </div>

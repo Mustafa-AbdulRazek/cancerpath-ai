@@ -31,10 +31,17 @@ export default function ActionCard({ a, rankNo }: { a: MatchedAction | (MatchedA
           {a.first90.map((s) => <li key={s}>{s}</li>)}
         </ol>
       </div>
+      {"impact" in a && a.impact && (
+        <div className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          <b>Impact estimate:</b> ≈ {a.impact.perRound.toLocaleString("en-GB")} more people screened per round (≈ {a.impact.perYear.toLocaleString("en-GB")} per year) if participation rises from {a.impact.current}% to {a.impact.target}%.
+          <div className="text-[11px] text-emerald-800">Eligible group: {a.impact.bandLabel}, {a.impact.pop.toLocaleString("en-GB")} people ({a.impact.popYear}, Statistics Finland), screened every {a.impact.intervalYears} years. Approximation: eligible population ≈ invitees.</div>
+        </div>
+      )}
       <div className="mt-2 grid gap-1 text-sm">
         <div><span className="font-semibold">Owner:</span> {a.owner}</div>
         <div><span className="font-semibold">KPI:</span> {a.kpi}</div>
         <div><span className="font-semibold">Roadmap actions:</span> {a.roadmap.join(", ")}</div>
+        {a.resources && <div><span className="font-semibold">Resources:</span> {a.resources} <span className="text-xs text-slate-400">(team estimate)</span></div>}
       </div>
       <div className="mt-2 space-y-0.5 border-t border-slate-100 pt-2 text-xs">
         {a.evidence.map((e) => (

@@ -31,6 +31,8 @@ type Dataset = {
   values: Record<string, Record<string, Record<string, number>>>;
   national: Record<string, Record<string, number>>;
   geo: GeoJSON.FeatureCollection;
+  eligible: Record<string, { breast: number; cervical: number; colorectal: number }>;
+  eligibleMeta: { year: string; source: string; url: string; bands: Record<"breast" | "cervical" | "colorectal", { label: string; intervalYears: number }> };
 };
 
 export const data = raw as unknown as Dataset;
@@ -246,3 +248,16 @@ export const EQUITY_PAIRS: { a: string; b: string; text: string }[] = [
   { a: "screen_colorectal", b: "foreign_pct", text: "Colorectal screening participation is lower where the share of foreign citizens is higher" },
   { a: "surv_colon", b: "low_income", text: "Colon cancer survival is lower where the low-income rate is higher" },
 ];
+
+export const SCREEN_BAND: Record<string, "breast" | "cervical" | "colorectal"> = { screen_breast: "breast", screen_cervical: "cervical", screen_colorectal: "colorectal" };
+
+/** People not screened today who would be screened if participation reached the target (approximation: eligible-age population ≈ invitees per round). */
+export function screeningImpact(key: string, code: string, target = 80) {
+  const band = SCREEN_BAND[key];
+  const v = value(key, code);
+  const pop = data.eligible?.[code]?.[band];
+  if (!band || v == null || !pop || v >= target) return undefined;
+  const meta = data.eligibleMeta.bands[band];
+  const perRound = Math.round((pop * (target - v)) / 100);
+  return { perRound, perYear: Math.round(perRound / meta.intervalYears), pop, band, bandLabel: meta.label, intervalYears: meta.intervalYears, current: v, target, popYear: data.eligibleMeta.year };
+}

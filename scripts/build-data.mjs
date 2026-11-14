@@ -80,6 +80,62 @@ for (const ind of INDICATORS) {
   console.log(`indicator ${ind.id} ${ind.key}: ${Object.keys(values[ind.key]).length} counties`);
 }
 
+// Eligible screening populations per county (Statistics Finland 11re, municipalities aggregated via Sotkanet memberOf).
+// Programme age bands (conservative core bands): breast women 50–69 every 2 years; cervical women 30–65 every 5 years;
+// colorectal men+women 60–68 every 2 years (programme expanding to 56–74 by 2031).
+const POP_YEAR = "2025";
+const kuntaToCounty = {};
+const byIdR = Object.fromEntries(regionsRaw.map((r) => [r.id, r]));
+for (const r of regionsRaw.filter((x) => x.category === "KUNTA")) {
+  const hv = (r.memberOf || []).map((id) => byIdR[id]).find((x) => x && x.category === "HYVINVOINTIALUE");
+  if (hv) kuntaToCounty["KU" + r.code] = hv.code;
+}
+const ages = Array.from({ length: 45 }, (_, i) => String(30 + i).padStart(3, "0")); // 030–074
+const pxRes = await fetch("https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/vaerak/11re.px", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    query: [
+      { code: "alue_23_20260101", selection: { filter: "item", values: Object.keys(kuntaToCounty) } },
+      { code: "ikaryhma_10_20180101", selection: { filter: "item", values: ages } },
+      { code: "sukupuoli_9_20180101", selection: { filter: "item", values: ["1", "2"] } },
+      { code: "timeperiod_y", selection: { filter: "item", values: [POP_YEAR] } },
+    ],
+    response: { format: "json-stat2" },
+  }),
+});
+if (!pxRes.ok) throw new Error("StatFin 11re " + pxRes.status + " " + (await pxRes.text()).slice(0, 200));
+const px = await pxRes.json();
+const [dA, dAge, dSex] = px.id.slice(0, 3).map((k) => px.dimension[k].category.index);
+const sizes = px.size;
+const eligible = {};
+for (const [kunta, ia] of Object.entries(dA)) {
+  const county = kuntaToCounty[kunta];
+  if (!county) continue;
+  const e = (eligible[county] ??= { breast: 0, cervical: 0, colorectal: 0 });
+  for (const [age, ig] of Object.entries(dAge)) {
+    for (const [sex, is] of Object.entries(dSex)) {
+      const idx = ((ia * sizes[1] + ig) * sizes[2] + is) * sizes[3];
+      const v = px.value[idx] || 0;
+      const a = +age;
+      if (sex === "2" && a >= 50 && a <= 69) e.breast += v;
+      if (sex === "2" && a >= 30 && a <= 65) e.cervical += v;
+      if (a >= 60 && a <= 68) e.colorectal += v;
+    }
+  }
+}
+console.log("eligible populations:", Object.keys(eligible).length, "counties; e.g. 14 =", JSON.stringify(eligible["14"]));
+const eligibleMeta = {
+  year: POP_YEAR,
+  source: "Statistics Finland, StatFin table 11re (population by age and sex), municipalities aggregated to wellbeing services counties",
+  url: "https://pxdata.stat.fi/PxWeb/pxweb/en/StatFin/StatFin__vaerak/statfin_vaerak_pxt_11re.px/",
+  bands: {
+    breast: { label: "women aged 50–69", intervalYears: 2 },
+    cervical: { label: "women aged 30–65", intervalYears: 5 },
+    colorectal: { label: "men and women aged 60–68 (core group; expanding to 56–74 by 2031)", intervalYears: 2 },
+  },
+};
+
 // Boundaries (Statistics Finland, CC BY 4.0)
 const geo = await getJson(
   "https://geo.stat.fi/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=tilastointialueet:hyvinvointialue4500k_2025&outputFormat=json&srsName=EPSG:4326"
@@ -109,6 +165,8 @@ const dataset = {
   indicators: indicatorsOut,
   values,
   national,
+  eligible,
+  eligibleMeta,
   geo: { type: "FeatureCollection", features },
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

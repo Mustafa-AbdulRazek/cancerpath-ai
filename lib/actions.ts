@@ -1,4 +1,4 @@
-import { findingsFor, IndicatorFinding, Stage, stageScores, weakestStage } from "./analysis";
+import { findingsFor, IndicatorFinding, Stage, stageScores, weakestStage, screeningImpact } from "./analysis";
 
 export type Evidence = { label: string; url: string; note?: string };
 export type Action = {
@@ -14,6 +14,7 @@ export type Action = {
   kpi: string;
   effort: "Low" | "Medium" | "High";
   roadmap: string[]; // National cancer strategy roadmap 2026–2031 action IDs
+  resources?: string; // team estimate, not a costed budget
   evidence: Evidence[];
 };
 
@@ -25,6 +26,7 @@ export const THL_2016_URL = "https://core.ac.uk/download/78470017.pdf";
 export const ACTIONS: Action[] = [
   {
     id: "A1",
+    resources: "Kits and analysis through the existing screening laboratory; ~0.2 FTE coordinator for 3 months",
     title: "Mail HPV self-sampling kits to cervical screening non-attenders",
     stage: "detection",
     level: "Wellbeing services county",
@@ -47,6 +49,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A2",
+    resources: "Reminder step in the existing invitation system; translated invitation texts; ~0.2 FTE",
     title: "Targeted reminders and multilingual invitations for colorectal screening, with a focus on men",
     stage: "detection",
     level: "Wellbeing services county",
@@ -69,6 +72,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A3",
+    resources: "Extra evening/weekend shifts at one mammography unit; online rebooking in the existing system",
     title: "Reduce barriers to breast screening in urban areas: rebooking, evening slots and outreach",
     stage: "detection",
     level: "Wellbeing services county",
@@ -90,6 +94,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A4",
+    resources: "≈ 2 protected GP slots per day per health center from existing capacity; updated nurse triage script; no new hires",
     title: "Suspected-cancer fast lane in primary care: red-flag triage plus a protected next-day GP slot",
     stage: "detection",
     level: "Health center",
@@ -112,6 +117,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A5",
+    resources: "Referral-system change, a 48-hour triage rota in the specialist unit, reserved imaging slots",
     title: "Standardised 'suspicion of cancer' referral with direct access to diagnostics",
     stage: "referral",
     level: "County + university hospital (YTA)",
@@ -135,6 +141,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A6",
+    resources: "One weekly diagnostic-centre clinic (internist + nurse) with reserved imaging and lab slots",
     title: "Diagnostic centre pathway for serious but non-specific symptoms",
     stage: "referral",
     level: "County + university hospital (YTA)",
@@ -157,6 +164,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A7",
+    resources: "~0.5 FTE analyst for 3 months using existing patient-record data; no new IT system",
     title: "Start measuring time-to-treatment now using THL's 2016 definitions",
     stage: "treatment",
     level: "Wellbeing services county",
@@ -179,6 +187,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A8",
+    resources: "1–2 nurse-navigator FTE for the first pathway",
     title: "Cancer pathway nurse navigator for every new suspected-cancer patient",
     stage: "treatment",
     level: "Wellbeing services county",
@@ -201,6 +210,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A9",
+    resources: "FIT kits and lab analysis; one GP training session per health center",
     title: "FIT test triage for symptomatic patients in primary care (colorectal)",
     stage: "outcome",
     level: "Health center",
@@ -222,6 +232,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A10",
+    resources: "Oncology lead + data analyst for the audit; one weekly remote MDT slot",
     title: "Guideline-adherence audit and regional multidisciplinary team (MDT) review with the university hospital",
     stage: "outcome",
     level: "County + university hospital (YTA)",
@@ -244,6 +255,7 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A11",
+    resources: "Existing remote-visit tools; a travel-support budget",
     title: "Teleoncology and remote follow-up for sparsely populated areas",
     stage: "outcome",
     level: "Wellbeing services county",
@@ -266,7 +278,7 @@ export const ACTIONS: Action[] = [
   },
 ];
 
-export type MatchedAction = Action & { score: number; matchedOn: IndicatorFinding[] };
+export type MatchedAction = Action & { score: number; matchedOn: IndicatorFinding[]; impact?: ReturnType<typeof screeningImpact> };
 
 /** Rank actions for a county by how strongly their trigger indicators show a gap. */
 export function actionsFor(code: string, limit = 4): MatchedAction[] {
@@ -283,7 +295,10 @@ export function actionsFor(code: string, limit = 4): MatchedAction[] {
     const score = Math.max(
       ...matched.map((m) => (m.z != null ? -m.z : 0) + (m.belowTarget ? 0.6 : 0) + (m.earlyWarning ? 0.4 : 0) + (m.signal === "strong" ? 0.5 : 0))
     );
-    out.push({ ...a, score, matchedOn: matched });
+    const impact = a.triggers.map((k) => screeningImpact(k, code)).find(Boolean);
+    // More people reached → higher priority (≈ +0.5 per 2,000 people per round, capped)
+    const impactBonus = impact ? Math.min(1, impact.perRound / 4000) : 0;
+    out.push({ ...a, score: score + impactBonus, matchedOn: matched, impact });
   }
   // Downstream pattern: outcome is the weakest stage while detection is on par, so the gap is likely created in
   // diagnosis/treatment. Prioritise measuring time-to-treatment and downstream actions over screening actions.

@@ -26,7 +26,7 @@ export function countyContext(code: string) {
   const f = findingsFor(code);
   const stages = stageScores(code);
   const weak = weakestStage(code);
-  const acts = actionsFor(code, 4);
+  const acts = actionsFor(code, 5);
   const lines: string[] = [];
   const sources: Source[] = [];
   lines.push(`COUNTY: ${c.name} (${c.nameFi}), wellbeing services county code ${c.code}.`);
@@ -42,7 +42,8 @@ export function countyContext(code: string) {
       `[${s.id}] ${x.ind.label} (${x.year}): ${fmt(x.value)} ${x.ind.unit}; Finland ${fmt(x.national)}; rank ${x.rank}/${x.of} (1 = best); best county ${x.best ? fmt(x.best[1]) : "n/a"}.` +
         (x.ind.target ? ` Strategy target ${x.ind.target}% → ${x.belowTarget ? "BELOW target" : "meets target"}.` : "") +
         ` In worst quartile ${x.persistence.worstQ} of last ${x.persistence.years} years.${t}` +
-        (x.ind.noisy ? " (Small numbers: interpret with caution.)" : "")
+        (x.ind.noisy ? " (UNRELIABLE: small numbers, do not use as evidence of a gap.)" : "") +
+        (x.smallDiff ? " (Within ±2 percentage points of Finland: treat as no meaningful difference.)" : "")
     );
   }
   const male = sourceForIndicator("screen_colorectal_male");
@@ -58,7 +59,7 @@ export function countyContext(code: string) {
   sources.push({ id: "P1", label: "CancerPath AI pathway stage scores (method: /sources)", url: "https://cancerpath-ai.vercel.app/sources" });
   lines.push(`RECOMMENDED ACTIONS (from the CancerPath AI evidence library):`);
   for (const a of acts) {
-    lines.push(`[${a.id}] ${a.title}. Owner: ${a.owner}. KPI: ${a.kpi}. Roadmap actions: ${a.roadmap.join(", ")}. Evidence: ${a.evidence.map((e) => e.label).join("; ")}.`);
+    lines.push(`[${a.id}] ${a.title}. Owner: ${a.owner}. KPI: ${a.kpi}.${a.impact ? ` Impact estimate: about ${a.impact.perRound} more people screened per round (about ${a.impact.perYear} per year) if participation rises from ${a.impact.current}% to 80% (eligible: ${a.impact.bandLabel}).` : ""}${a.resources ? ` Resources (team estimate): ${a.resources}.` : ""} Roadmap actions: ${a.roadmap.join(", ")}. Evidence: ${a.evidence.map((e) => e.label).join("; ")}.`);
     sources.push({ id: a.id, label: `CancerPath action ${a.id}: ${a.title}`, url: a.evidence[0]?.url || ROADMAP_URL });
   }
   return { county: c, text: lines.join("\n"), sources, weak, actions: acts };

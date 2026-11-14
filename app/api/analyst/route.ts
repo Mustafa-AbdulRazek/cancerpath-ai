@@ -15,8 +15,9 @@ STRICT RULES:
 3. Copy numbers exactly as they appear in the CONTEXT. Do not compute new percentages or ratios.
 4. If the CONTEXT has no data for something, say so plainly and name it as a data gap (e.g. time from referral to treatment is not available in national open data by county).
 5. Indicator S3336 (specialist waits > 6 months) covers ALL specialties: describe it as a capacity/congestion proxy, never as a cancer-specific delay. Indicator S6411 (GP waits > 7 days) is affected by changes to the legal care guarantee [D9]: mention this when discussing its trend.
-6. Correlation is not causation. Phrase possible causes as hypotheses to verify ("may indicate", "should be checked").
-7. Write for a non-technical health decision-maker: short sentences, no jargon, no markdown tables.`;
+6. Never present an indicator marked UNRELIABLE or "no meaningful difference" as a gap; you may mention it only as being on par or uncertain.
+7. Correlation is not causation. Phrase possible causes as hypotheses to verify ("may indicate", "should be checked").
+8. Write for a non-technical health decision-maker: short sentences, no jargon, no markdown tables.`;
 
 const BRIEF_TASK = (lang: string) => lang === "fi" ? `Kirjoita tälle hyvinvointialueelle 2 minuutin päätöksentekotiivistelmä suomeksi. Käytä täsmälleen näitä otsikoita:
 **Keskeinen viesti** (1–2 virkettä: missä hoitopolun vaiheessa ero syntyy)

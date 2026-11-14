@@ -32,7 +32,7 @@ Goal 3 means equal outcomes, so we start from unequal **survival** and trace it 
 - Colon cancer 5-year survival ranges from **63% to 74%** between counties.
 
 ## Actionability
-Every county gets a ranked **90-day action plan**. Each action names the **owner** (e.g. county screening coordinator, primary care chief physician, YTA university hospital), **first three steps**, a **KPI**, the **National Cancer Strategy roadmap action** it implements (2.5.1, 2.5.2, 3.1.2, 3.1.4, 3.2…), and **evidence**. Examples:
+Every county gets a ranked **90-day action plan**, ranked by gap size and **people reached** (e.g. North Karelia: ≈ 4,000 more women screened per round with HPV self-sampling; Helsinki: ≈ 6,700 more people in colorectal screening per round, using Statistics Finland age-group populations). Each action also has a resource line (team estimate). Each action names the **owner** (e.g. county screening coordinator, primary care chief physician, YTA university hospital), **first three steps**, a **KPI**, the **National Cancer Strategy roadmap action** it implements (2.5.1, 2.5.2, 3.1.2, 3.1.4, 3.2…), and **evidence**. Examples:
 - HPV self-sampling kits for screening non-attenders (Finnish RCT, BMJ meta-analysis)
 - Standardised "suspected cancer" referral with direct access to diagnostics, on the Danish/Swedish/Norwegian pathway model the roadmap itself recommends
 - Primary-care red-flag fast lane, nurse navigators, FIT triage, regional MDT audits
