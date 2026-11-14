@@ -42,7 +42,7 @@ export const countyByCode = Object.fromEntries(data.counties.map((c) => [c.code,
 
 export const STAGES: { key: Stage; label: string; question: string; color: string }[] = [
   { key: "detection", label: "Detection", question: "Are cancers found early? (screening + access to a GP)", color: "#d97706" },
-  { key: "referral", label: "Referral", question: "Does the patient move quickly from primary to specialist care?", color: "#dc2626" },
+  { key: "referral", label: "Referral", question: "Is specialist care congested? (all-specialty capacity proxy)", color: "#dc2626" },
   { key: "treatment", label: "Diagnosis → Treatment", question: "Does treatment start within target times?", color: "#7c3aed" },
   { key: "outcome", label: "Outcome", question: "Do patients survive as well as elsewhere in Finland?", color: "#0f766e" },
 ];
@@ -145,6 +145,7 @@ export type IndicatorFinding = {
   persistence: { worstQ: number; years: number };
   trend?: ReturnType<typeof trend>;
   belowTarget: boolean;
+  smallDiff: boolean;
   signal: "strong" | "moderate" | "none";
   earlyWarning: boolean;
 };
@@ -160,10 +161,13 @@ export function findingsFor(code: string): IndicatorFinding[] {
     const belowTarget = ind.target != null && v != null && v < ind.target;
     // A "strong" signal must be both clearly below the county average and persistent over time.
     let signal: IndicatorFinding["signal"] = "none";
-    if (z != null && z <= -1 && (p.worstQ >= 3 || p.years < 3) && !ind.noisy) signal = "strong";
+    const nat = nationalValue(ind.key, year);
+    // Survival: differences within ±2 pp of Finland are likely within statistical noise for most counties.
+    const smallDiff = ind.stage === "outcome" && v != null && nat != null && Math.abs(v - nat) <= 2;
+    if (z != null && z <= -1 && (p.worstQ >= 3 || p.years < 3) && !ind.noisy && !smallDiff) signal = "strong";
     else if (z != null && z <= -0.5) signal = "moderate";
     const earlyWarning = !!t && !t.improving && Math.abs(t.delta) >= (ind.unit.startsWith("%") ? 5 : ind.key === "spec_wait6m" ? 15 : 9999);
-    return { key: ind.key, ind, year, value: v, national: nationalValue(ind.key, year), z, rank: r.rank, of: r.of, best: r.best, persistence: p, trend: t, belowTarget, signal, earlyWarning };
+    return { key: ind.key, ind, year, value: v, national: nat, smallDiff, z, rank: r.rank, of: r.of, best: r.best, persistence: p, trend: t, belowTarget, signal, earlyWarning };
   });
 }
 
@@ -209,3 +213,21 @@ export function fmt(v: number | undefined, unit?: string, digits?: number) {
 export function stageMeta(stage: Stage) {
   return STAGES.find((s) => s.key === stage)!;
 }
+
+/** Pearson correlation across counties (latest year of each indicator). Ecological: county-level, not individual-level. */
+export function countyCorrelation(a: string, b: string) {
+  const ya = latestYear(a), yb = latestYear(b);
+  const pts = data.counties
+    .map((c) => ({ code: c.code, name: c.short, x: data.values[b]?.[c.code]?.[yb], y: data.values[a]?.[c.code]?.[ya] }))
+    .filter((p): p is { code: string; name: string; x: number; y: number } => p.x != null && p.y != null);
+  const mx = mean(pts.map((p) => p.x)), my = mean(pts.map((p) => p.y));
+  let n = 0, dx = 0, dy = 0;
+  for (const p of pts) { n += (p.x - mx) * (p.y - my); dx += (p.x - mx) ** 2; dy += (p.y - my) ** 2; }
+  return { r: n / Math.sqrt(dx * dy), n: pts.length, pts, yearA: ya, yearB: yb };
+}
+
+export const EQUITY_PAIRS: { a: string; b: string; text: string }[] = [
+  { a: "screen_breast", b: "foreign_pct", text: "Breast screening participation is lower where the share of foreign citizens is higher" },
+  { a: "screen_colorectal", b: "foreign_pct", text: "Colorectal screening participation is lower where the share of foreign citizens is higher" },
+  { a: "surv_colon", b: "low_income", text: "Colon cancer survival is lower where the low-income rate is higher" },
+];

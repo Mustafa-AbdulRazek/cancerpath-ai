@@ -23,6 +23,9 @@ export const INDICATORS = [
   // Context (not scored)
   { id: 5643, key: "cancer_index", stage: "context", label: "Cancer morbidity index, age-standardised (Finland = 100)", short: "Cancer index", unit: "index", better: "lower", gender: "total" },
   { id: 2616, key: "population", stage: "context", label: "Population (mean)", short: "Population", unit: "people", better: "none", gender: "total" },
+  { id: 3074, key: "foreign_pct", stage: "context", label: "Foreign citizens, % of population", short: "Foreign citizens", unit: "%", better: "none", gender: "total" },
+  { id: 3099, key: "low_income", stage: "context", label: "Low-income rate (municipal general), % of population", short: "Low-income rate", unit: "%", better: "lower", gender: "total" },
+  { id: 180, key: "education", stage: "context", label: "Education level measure (higher = more educated)", short: "Education level", unit: "index", better: "higher", gender: "total" },
   { id: 6103, key: "screen_colorectal_male", stage: "context", label: "Colorectal cancer screening participation, men", short: "Colorectal screening (men)", unit: "%", better: "higher", gender: "male" },
   { id: 6103, key: "screen_colorectal_female", stage: "context", label: "Colorectal cancer screening participation, women", short: "Colorectal screening (women)", unit: "%", better: "higher", gender: "female" },
 ];

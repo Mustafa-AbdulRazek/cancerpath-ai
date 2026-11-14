@@ -11,7 +11,7 @@ Shows every Finnish wellbeing services county where its cancer pathway falls beh
 **Description (≤5000, markdown):**
 
 ## The problem
-Finland's National Cancer Strategy 2026–2035 sets Goal 3: *equal and effective cancer care*, with patients treated within target times wherever they live. But a county decision-maker cannot see **where** in the pathway their patients lose time. Time from referral to treatment is not published for any county, stage at diagnosis is recorded for only ~40% of cancers (strategy p.30), and regional comparisons are "occasional and based on coarse measures" (p.35).
+Finland's National Cancer Strategy 2026–2035 sets Goal 3: *equal and effective cancer care*, with patients treated within target times wherever they live. But a county decision-maker cannot see **where** in the pathway their patients lose time. Time from referral to treatment is not in national open data for any county, stage at diagnosis is recorded for only ~40% of cancers (strategy p.30), and regional comparisons are "occasional and based on coarse measures" (p.35).
 
 ## What we built
 **CancerPath AI** combines open THL Sotkanet and Finnish Cancer Registry indicators for all 21 wellbeing services counties plus Helsinki, and maps them onto the cancer pathway:
@@ -24,8 +24,9 @@ Finland's National Cancer Strategy 2026–2035 sets Goal 3: *equal and effective
 For each county it finds **the stage where the gap emerges**. It separates **robust gaps** (persistently in the worst quartile) from noise, and flags **early warnings** (fast deterioration).
 
 ## Insights it reveals (all sourced)
-- Non-urgent GP visits waiting > 7 days rose from **38.3% to 54.7%** in Finland, 2021→2025. Access to the first step of detection is getting worse.
-- People waiting > 6 months for specialist care: **99 per 10,000 in North Karelia vs 1.4 in Helsinki** (2025).
+- More than half of non-urgent GP visits now wait > 7 days (**38.3% → 54.7%**, 2021→2025). Part of this reflects the relaxed legal care guarantee, which we flag transparently.
+- People waiting > 6 months for specialist care (all specialties, a congestion proxy): **99 per 10,000 in North Karelia vs 1.4 in Helsinki** (2025).
+- **Equity:** breast screening participation is strongly lower where the share of foreign citizens is higher (**r = −0.81**, 22 areas), so the screening gap sits in diverse urban areas.
 - Colorectal screening is below 80% in **all 22 areas**, and cervical screening in 20 of 22. Men participate in colorectal screening far less than women (**69.2% vs 77.7%**).
 - Colon cancer 5-year survival ranges from **63% to 74%** between counties.
 

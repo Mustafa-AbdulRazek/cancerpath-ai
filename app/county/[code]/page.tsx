@@ -48,7 +48,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
       <section className="grid gap-6 lg:grid-cols-[1fr_200px]">
         <div>
           <h1 className="text-3xl font-bold">{c.name}</h1>
-          <div className="text-sm text-slate-500">{c.nameFi} · wellbeing services area {c.code} · population {fmt(value("population", code))} ({latestYear("population")})</div>
+          <div className="text-sm text-slate-500">{c.nameFi} · wellbeing services area {c.code} · population {fmt(value("population", code))} ({latestYear("population")}) · foreign citizens {fmt(value("foreign_pct", code))}% (FI {fmt(nationalValue("foreign_pct"))}%) · low-income rate {fmt(value("low_income", code))}% (FI {fmt(nationalValue("low_income"))}%)</div>
           <div className="mt-3 rounded-xl border-l-4 border-sky-700 bg-white p-4 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-wide text-sky-700">Key message</div>
             <p className="mt-1 text-lg font-medium leading-snug">{msg}</p>
@@ -74,9 +74,10 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
                 <div className="mt-1 text-xs text-slate-500">{s.question}</div>
                 <div className="mt-3 text-xl font-bold" style={{ color: col }}>{status}</div>
                 <div className="text-xs text-slate-500">
-                  {sc.score == null ? (s.key === "treatment" ? "Referral → treatment times are not published by county." : "No county data for this stage.") : `Stage score ${sc.score.toFixed(2)} SD vs county average`}
+                  {sc.score == null ? (s.key === "treatment" ? "Referral → treatment times are not in national open data." : "No county data for this stage.") : `Stage score ${sc.score.toFixed(2)} SD vs county average`}
                 </div>
                 {s.key === "treatment" && <div className="mt-2"><SourceBadge href={THL_2016_URL} label="Measure with THL 21/2016 → A7" /></div>}
+                {s.key === "referral" && sc.score != null && <div className="mt-1 text-[11px] text-slate-400">Proxy: all-specialty queue, not cancer-specific</div>}
                 {isWeak && <div className="absolute -top-2 right-3 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">Gap emerges here</div>}
               </div>
             );
@@ -116,6 +117,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
                           <span className="text-slate-500">—</span>}
                         {f.earlyWarning && <div className="font-semibold text-red-700">⚠ worsening fast</div>}
                         {f.ind.noisy && <div className="text-slate-400">small numbers</div>}
+                        {f.smallDiff && <div className="text-slate-400">within ±2 pp of Finland</div>}
                       </td>
                       <td><SourceBadge href={f.ind.url} label={`Sotkanet ${f.ind.id}`} /></td>
                     </tr>

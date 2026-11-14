@@ -1,4 +1,4 @@
-import { countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
+import { countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
 import { actionsFor, STRATEGY_URL, ROADMAP_URL, THL_2016_URL } from "./actions";
 
 export type Source = { id: string; label: string; url: string };
@@ -12,6 +12,7 @@ export const DOC_FACTS: { id: string; text: string; source: Source }[] = [
   { id: "D5", text: "A national cancer quality registry does not yet exist; regional comparisons are occasional and based on coarse, fragmented measures.", source: { id: "D5", label: "National Cancer Strategy 2026–2035, p. 35", url: STRATEGY_URL } },
   { id: "D6", text: "Roadmap action 2.5.2: standardised referral criteria modelled on Denmark's Kræftpakkeforløb, Sweden's SVF and Norway's Pakkeforløp; criteria for the 5 most common cancers by 2026–2028. Action 3.1.2: national care-pathway descriptions and cancer-specific access-time targets for five cancers by 2028. Action 3.1.4: national quality indicators.", source: { id: "D6", label: "Implementation roadmap 2026–2031, p. 52–58", url: ROADMAP_URL } },
   { id: "D7", text: "Time from first symptom to diagnosis and treatment varies greatly between regions; if the service chain is poorly coordinated, the total time to treatment can become very long. Some residents live over 400 km from the nearest central hospital and over 700 km from a university hospital.", source: { id: "D7", label: "Implementation roadmap 2026–2031, p. 12–13", url: ROADMAP_URL } },
+  { id: "D9", text: "The legal primary-care care guarantee changed: a 14-day limit applied from September 2023, the planned 7-day limit was cancelled, and the government proposed relaxing the limit to three months from 2025 (HE 134/2024). Trends in GP waiting > 7 days therefore partly reflect legal changes, not only access.", source: { id: "D9", label: "Government proposal HE 134/2024 (care guarantee)", url: "https://www.edilex.fi/he/20240134" } },
   { id: "D8", text: "THL guidance 21/2016 defines how to monitor access to cancer care (from referral arrival to first treatment) per cancer type, with recommended maximum waiting times.", source: { id: "D8", label: "THL Ohjaus 21/2016", url: THL_2016_URL } },
 ];
 
@@ -66,6 +67,11 @@ export function countyContext(code: string) {
 export function nationalContext() {
   const lines: string[] = [];
   const sources: Source[] = [];
+  EQUITY_PAIRS.forEach((e, i) => {
+    const r = countyCorrelation(e.a, e.b);
+    lines.push(`[E${i + 1}] Equity (ecological, county-level, not causal): ${e.text}: correlation r = ${r.r.toFixed(2)} across ${r.n} areas.`);
+    sources.push({ id: `E${i + 1}`, label: `CancerPath AI county-level correlation: ${e.text}`, url: "https://cancerpath-ai.vercel.app/" });
+  });
   for (const ind of indicators.filter((i) => i.stage !== "context" || i.key.startsWith("screen_colorectal_"))) {
     const s = nationalSeries(ind.key);
     if (!s.length) continue;

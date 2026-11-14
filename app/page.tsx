@@ -6,6 +6,8 @@ import {
   scoredIndicators, stageMeta, STAGES, value, weakestStage, zScore,
 } from "@/lib/analysis";
 import { STRATEGY_URL, THL_2016_URL } from "@/lib/actions";
+import Scatter from "@/components/Scatter";
+import { countyCorrelation, EQUITY_PAIRS } from "@/lib/analysis";
 
 const zColor = (z?: number) => (z == null ? "#f1f5f9" : z <= -1 ? "#dc2626" : z <= -0.5 ? "#fca5a5" : z < 0.5 ? "#e2e8f0" : z < 1 ? "#5eead4" : "#0f766e");
 
@@ -74,9 +76,9 @@ export default function Home() {
         </div>
         <Card className="border-violet-200 bg-violet-50">
           <div className="text-xs font-semibold uppercase tracking-wide text-violet-700">The blind spot</div>
-          <div className="mt-1 text-lg font-bold">Time from referral to treatment is not publicly reported for any county</div>
+          <div className="mt-1 text-lg font-bold">Time from referral to treatment is not in national open data for any county</div>
           <p className="mt-1 text-sm text-slate-700">
-            Goal 3 requires that &quot;patients get treatment within target times&quot;. THL defined how to measure this in 2016, but no county publishes it, and stage at diagnosis is recorded for only ~40% of cancers.
+            Goal 3 requires that &quot;patients get treatment within target times&quot;. THL defined how to measure this in 2016, yet the strategy notes monitoring is still not systematic or national, and stage at diagnosis is recorded for only ~40% of cancers.
           </p>
           <div className="mt-2 flex flex-wrap gap-1">
             <SourceBadge href={STRATEGY_URL} label="Strategy p.5, p.30" />
@@ -89,14 +91,14 @@ export default function Home() {
         <Card>
           <Chip color={stageMeta("detection").color}>Detection</Chip>
           <div className="mt-2 text-3xl font-bold">{fmt(h.gpFirst.value)}% → {fmt(h.gpLast.value)}%</div>
-          <div className="text-sm text-slate-600">of non-urgent GP visits waited over 7 days, Finland {h.gpFirst.year}→{h.gpLast.year}. Slower primary care access delays the first step of cancer detection.</div>
+          <div className="text-sm text-slate-600">of non-urgent GP visits waited over 7 days, Finland {h.gpFirst.year}→{h.gpLast.year}. More than half now wait over a week: the first step of detection. <span className="text-amber-700">Note: the legal care-guarantee limit was relaxed in 2023–2025, which affects this trend.</span></div>
           <div className="mt-2"><SourceBadge href={gpInd.url} label={`Sotkanet ${gpInd.id}`} /></div>
         </Card>
         <Card>
           <Chip color={stageMeta("referral").color}>Referral</Chip>
           <div className="mt-2 text-3xl font-bold">{fmt(h.worstW?.[1])} vs {fmt(h.bestW?.[1])}</div>
           <div className="text-sm text-slate-600">
-            people per 10,000 waited over 6 months for specialist care ({h.yW}): {h.worstW ? data.counties.find((c) => c.code === h.worstW![0])?.name : ""} vs {h.bestW ? data.counties.find((c) => c.code === h.bestW![0])?.name : ""}. A cancer suspicion must not join this queue.
+            people per 10,000 waited over 6 months for specialist care ({h.yW}): {h.worstW ? data.counties.find((c) => c.code === h.worstW![0])?.name : ""} vs {h.bestW ? data.counties.find((c) => c.code === h.bestW![0])?.name : ""}. An all-specialty proxy for system congestion: a cancer suspicion must not join this queue.
           </div>
           <div className="mt-2"><SourceBadge href={wInd.url} label={`Sotkanet ${wInd.id}`} /></div>
         </Card>
@@ -147,6 +149,33 @@ export default function Home() {
 
       <section>
         <Card>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-bold">Equity lens: who is being missed?</h2>
+            <span className="text-xs text-slate-500">Ecological county-level correlations (n = 22): signals to investigate, not individual-level causes</span>
+          </div>
+          <div className="mt-3 grid gap-6 md:grid-cols-[1fr_380px]">
+            <div className="space-y-3">
+              {EQUITY_PAIRS.map((e) => {
+                const c = countyCorrelation(e.a, e.b);
+                return (
+                  <div key={e.a + e.b} className="rounded-lg bg-slate-50 p-3">
+                    <div className="text-sm font-semibold">{e.text}</div>
+                    <div className="text-sm text-slate-600">Correlation r = <b>{c.r.toFixed(2)}</b> across {c.n} areas ({indicatorByKey[e.a].short} {c.yearA} vs {indicatorByKey[e.b].short} {c.yearB}).</div>
+                    <div className="mt-1 flex gap-1"><SourceBadge href={indicatorByKey[e.a].url} label={`Sotkanet ${indicatorByKey[e.a].id}`} /><SourceBadge href={indicatorByKey[e.b].url} label={`Sotkanet ${indicatorByKey[e.b].id}`} /></div>
+                  </div>
+                );
+              })}
+              <p className="text-sm text-slate-700"><b>So what:</b> the screening gap is concentrated in diverse urban areas (Helsinki, Vantaa–Kerava, West Uusimaa). Multilingual invitations, community outreach and easy rebooking (actions A2, A3) target exactly this group. The strategy's equality goal asks for regional <i>and</i> socioeconomic differences to steer services.</p>
+            </div>
+            <div>
+              {(() => { const c = countyCorrelation("screen_breast", "foreign_pct"); return <Scatter pts={c.pts} xLabel={`Foreign citizens, % (${c.yearB})`} yLabel={`Breast screening, % (${c.yearA})`} />; })()}
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <section>
+        <Card>
           <h2 className="text-lg font-bold">Goal 3 tracker: what Finland can and cannot monitor today</h2>
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div className="rounded-lg bg-slate-50 p-3">
@@ -161,8 +190,8 @@ export default function Home() {
             </div>
             <div className="rounded-lg bg-violet-50 p-3">
               <div className="text-sm font-semibold">Treatment within target times</div>
-              <div className="text-sm text-slate-600">Defined by THL 21/2016, but not publicly reported by county. CancerPath action A7 shows how a county can start measuring it in 90 days with its own data.</div>
-              <div className="mt-1 text-xs font-semibold text-violet-700">✗ Not measurable publicly: the biggest data gap</div>
+              <div className="text-sm text-slate-600">Defined by THL 21/2016, but not in national open data by county. CancerPath action A7 shows how a county can start measuring it in 90 days with its own data.</div>
+              <div className="mt-1 text-xs font-semibold text-violet-700">✗ Not measurable from open data: the biggest data gap</div>
             </div>
           </div>
         </Card>

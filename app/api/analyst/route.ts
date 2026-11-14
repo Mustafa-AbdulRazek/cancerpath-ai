@@ -13,9 +13,10 @@ STRICT RULES:
 1. Use ONLY the facts in the CONTEXT. Never invent numbers, studies, targets or causes.
 2. After every factual sentence, cite its source ID(s) in square brackets, e.g. [S3620] or [D3] or [A5].
 3. Copy numbers exactly as they appear in the CONTEXT. Do not compute new percentages or ratios.
-4. If the CONTEXT has no data for something, say so plainly and name it as a data gap (e.g. time from referral to treatment is not publicly reported by county).
-5. Correlation is not causation. Phrase possible causes as hypotheses to verify ("may indicate", "should be checked").
-6. Write for a non-technical health decision-maker: short sentences, no jargon, no markdown tables.`;
+4. If the CONTEXT has no data for something, say so plainly and name it as a data gap (e.g. time from referral to treatment is not available in national open data by county).
+5. Indicator S3336 (specialist waits > 6 months) covers ALL specialties: describe it as a capacity/congestion proxy, never as a cancer-specific delay. Indicator S6411 (GP waits > 7 days) is affected by changes to the legal care guarantee [D9]: mention this when discussing its trend.
+6. Correlation is not causation. Phrase possible causes as hypotheses to verify ("may indicate", "should be checked").
+7. Write for a non-technical health decision-maker: short sentences, no jargon, no markdown tables.`;
 
 const BRIEF_TASK = (lang: string) => lang === "fi" ? `Kirjoita tälle hyvinvointialueelle 2 minuutin päätöksentekotiivistelmä suomeksi. Käytä täsmälleen näitä otsikoita:
 **Keskeinen viesti** (1–2 virkettä: missä hoitopolun vaiheessa ero syntyy)
@@ -114,7 +115,7 @@ function fallbackBrief(code: string) {
     ...ctx.actions.slice(0, 3).map((a) => `- ${a.title}. Owner: ${a.owner}. KPI: ${a.kpi} [${a.id}]`),
     ``,
     `**What we cannot see yet**`,
-    `- Time from referral to treatment is not publicly reported by county, so the strategy's "treatment within target times" indicator cannot be monitored yet [D1][D8].`,
+    `- Time from referral to treatment is not available in national open data by county, so the strategy's "treatment within target times" indicator cannot be monitored yet [D1][D8].`,
     `- Stage at diagnosis is recorded for only about 40% of cases [D3].`,
   ].join("\n");
 }
@@ -156,7 +157,7 @@ export async function POST(req: Request) {
   }
   const cited = [...new Set((text.match(/\[([A-Z]\d+[a-z]?)\]/g) || []).map((s) => s.slice(1, -1)))];
   // support multi-citations like [S3620, D3]
-  for (const m of text.match(/\[([^\]]+)\]/g) || []) for (const id of m.slice(1, -1).split(/[,;\s]+/)) if (/^[SDAP]\d+[mf]?$/.test(id)) cited.push(id);
+  for (const m of text.match(/\[([^\]]+)\]/g) || []) for (const id of m.slice(1, -1).split(/[,;\s]+/)) if (/^[SDAPE]\d+[mf]?$/.test(id)) cited.push(id);
   const uniq = [...new Set(cited)];
   const byId = new Map(sources.map((s) => [s.id, s]));
   return NextResponse.json({

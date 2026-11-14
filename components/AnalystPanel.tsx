@@ -64,6 +64,15 @@ export default function AnalystPanel({ county, countyName }: { county: string; c
       setLoading(false);
     }
   }
+  function printBrief() {
+    document.body.classList.add("print-brief");
+    const done = () => {
+      document.body.classList.remove("print-brief");
+      window.removeEventListener("afterprint", done);
+    };
+    window.addEventListener("afterprint", done);
+    window.print();
+  }
   const suggestions = [
     `Where in the cancer pathway does ${countyName} fall behind?`,
     `What should ${countyName} do first, and who owns it?`,
@@ -83,11 +92,16 @@ export default function AnalystPanel({ county, countyName }: { county: string; c
           ))}
         </div>
         {brief && (
-          <button onClick={() => window.print()} className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Print / save as PDF</button>
+          <button onClick={printBrief} className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Print one-page brief (PDF)</button>
         )}
       </div>
       {brief && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div id="brief-print" className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="print-only mb-3 border-b border-slate-300 pb-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-sky-700">CancerPath AI · decision brief · {new Date().toLocaleDateString("en-GB")}</div>
+            <div className="text-2xl font-bold">{countyName}</div>
+            <div className="text-xs text-slate-500">National Cancer Strategy 2026–2035 · Goal 3 · cancerpath-ai.vercel.app/county/{county}</div>
+          </div>
           <Answer r={brief} />
         </div>
       )}

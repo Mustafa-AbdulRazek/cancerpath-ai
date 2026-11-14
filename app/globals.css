@@ -7,3 +7,12 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   header, footer, .print\:hidden { display: none !important; }
   body { background: white; }
 }
+
+.print-only { display: none; }
+@media print {
+  body.print-brief * { visibility: hidden; }
+  body.print-brief #brief-print, body.print-brief #brief-print * { visibility: visible; }
+  body.print-brief #brief-print { position: absolute; left: 0; top: 0; width: 100%; border: none; background: white; padding: 24px; }
+  body.print-brief .print-only { display: block; }
+  body.print-brief details { display: block; }
+}

@@ -58,11 +58,11 @@ export default function SourcesPage() {
         <Card>
           <h2 className="text-lg font-bold">Limitations (read before acting)</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-            <li><b>No public time-to-treatment data</b> by county. The Goal 3 indicator &quot;treatment within target times&quot; cannot be monitored from open data; action A7 addresses this.</li>
+            <li><b>No time-to-treatment data in national open data</b> by county (some areas may track it internally). The Goal 3 indicator &quot;treatment within target times&quot; cannot be monitored from open data; action A7 addresses this.</li>
             <li>Stage at diagnosis is recorded for only about 40% of cases (strategy p.30), so we cannot test the &quot;70% at stage I–II&quot; target by county.</li>
             <li>Specialist-care waiting (Sotkanet 3336) covers <b>all</b> specialties, not only cancer, and is missing for the four HUS-area Uusimaa counties.</li>
-            <li>GP waiting (6411) measures non-urgent visits. Urgent cancer suspicions should bypass this queue, so it is a proxy for access, not cancer-specific delay.</li>
-            <li>Survival figures are age-standardised period estimates over several years. Small counties (e.g. Kainuu) have wider uncertainty; cervical cancer survival is flagged as noisy and excluded from scoring.</li>
+            <li>GP waiting (6411) measures non-urgent visits. Urgent cancer suspicions should bypass this queue, so it is a proxy for access, not cancer-specific delay. <b>Its trend is also affected by legal changes</b>: the care-guarantee limit was 14 days from Sept 2023, the planned 7-day limit was cancelled, and a relaxation to three months was proposed from 2025 (HE 134/2024).</li>
+            <li>Survival figures are age-standardised period estimates over several years. Differences within ±2 percentage points of Finland are labelled as small and never scored as a robust gap. Small counties (e.g. Kainuu) have wider uncertainty; cervical cancer survival is flagged as noisy and excluded from scoring.</li>
             <li>Associations between indicators are not causal. Our gap findings are hypotheses for the county to verify with its own data.</li>
             <li>County-level cancer mortality is not available in the open indicator API, so the &quot;mortality −10%&quot; target is tracked nationally only.</li>
           </ul>
