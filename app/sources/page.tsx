@@ -1,6 +1,7 @@
 import { Card, SourceBadge } from "@/components/ui";
 import { data, indicators, nationalValue, latestYear, fmt } from "@/lib/analysis";
 import { DOC_FACTS } from "@/lib/context";
+import { FACTS } from "@/lib/facts";
 
 export const metadata = { title: "Sources & method · CancerPath AI" };
 
@@ -76,6 +77,7 @@ export default function SourcesPage() {
           <li>THL Ohjaus 21/2016: Hoitoonpääsyn seuranta syövän hoidossa</li>
           <li><a className="underline" href={data.eligibleMeta.url}>{data.eligibleMeta.source}</a> ({data.eligibleMeta.year}). Used for impact estimates: {Object.values(data.eligibleMeta.bands).map((b) => `${b.label}, every ${b.intervalYears} years`).join("; ")}. Eligible population is used as an approximation of invitees per round.</li>
           <li>Resource lines on actions are team estimates, not costed budgets.</li>
+          {Object.values(FACTS).map((x) => <li key={x.url + x.source}>{x.text}. <a className="underline" href={x.url} target="_blank" rel="noreferrer">{x.source}</a></li>)}
         </ul>
       </Card>
     </div>
