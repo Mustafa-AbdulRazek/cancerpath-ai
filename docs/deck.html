@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CancerPath AI – pitch deck</title>
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; color: #0f172a; }
+  .s { width: 1280px; height: 720px; padding: 56px 72px; position: relative; page-break-after: always; overflow: hidden; background: #fff; }
+  .s:last-child { page-break-after: auto; }
+  h1 { font-size: 60px; margin: 0; line-height: 1.05; }
+  h2 { font-size: 40px; margin: 0 0 24px; line-height: 1.15; }
+  .k { font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #0369a1; margin-bottom: 10px; }
+  p, li { font-size: 22px; line-height: 1.45; }
+  .muted { color: #475569; }
+  .src { position: absolute; left: 72px; bottom: 26px; right: 72px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+  .grid { display: grid; gap: 22px; }
+  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(4, 1fr); }
+  .card { border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; background: #f8fafc; }
+  .big { font-size: 46px; font-weight: 800; line-height: 1.1; }
+  .chip { display: inline-block; color: #fff; font-weight: 700; font-size: 14px; padding: 4px 12px; border-radius: 999px; }
+  .det { background: #d97706; } .ref { background: #dc2626; } .tre { background: #7c3aed; } .out { background: #0f766e; }
+  .dots span { display: inline-block; width: 26px; height: 26px; border-radius: 50%; margin-right: 8px; }
+  .dark { background: #0f172a; color: #fff; } .dark .muted { color: #cbd5e1; } .dark .k { color: #7dd3fc; }
+  .flow { display: flex; align-items: stretch; gap: 14px; }
+  .flow .card { flex: 1; } .arrow { font-size: 36px; align-self: center; color: #94a3b8; }
+  ul { margin: 0; padding-left: 26px; }
+  .gap { border: 3px solid #dc2626; background: #fef2f2; }
+  .blind { border: 3px dashed #7c3aed; background: #f5f3ff; }
+  .tight .card { padding: 14px 20px; } .tight p { font-size: 19px; margin: 6px 0; } .tight .big { font-size: 40px; } .tight h2 { margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<section class="s dark">
+  <div class="dots" style="margin-bottom:40px"><span style="background:#d97706"></span><span style="background:#dc2626"></span><span style="background:#7c3aed"></span><span style="background:#0f766e"></span></div>
+  <div class="k">AstraZeneca · Equal Care Across Finland · Junction 2026</div>
+  <h1>CancerPath AI</h1>
+  <p style="font-size:30px;margin-top:18px;max-width:1000px">Shows every Finnish wellbeing services county <b>where its cancer pathway falls behind</b>, and <b>what to do in the next 90 days</b>.</p>
+  <p class="muted" style="margin-top:60px">Team TachyKnights · Live demo: cancerpath-ai.vercel.app · Code: github.com/Mustafa-AbdulRazek/cancerpath-ai</p>
+</section>
+
+<section class="s">
+  <div class="k">The problem</div>
+  <h2>Goal 3 promises treatment within target times, wherever you live. But no county can see where the time is lost.</h2>
+  <div class="grid g3" style="margin-top:30px">
+    <div class="card blind"><div class="big">0</div><p>counties publish referral-to-treatment times, although THL defined how to measure them in 2016</p></div>
+    <div class="card"><div class="big">~40%</div><p>of cancers have stage at diagnosis recorded in clinical registry notifications</p></div>
+    <div class="card"><div class="big">Occasional</div><p>regional comparisons, "based on coarse and fragmented measures"</p></div>
+  </div>
+  <div class="src">National Cancer Strategy 2026–2035 p.5, p.30, p.35 · THL Ohjaus 21/2016 · Implementation roadmap 2026–2031 p.12–13</div>
+</section>
+
+<section class="s tight">
+  <div class="k">What open data already reveals</div>
+  <h2>The gaps are large, and they sit at different points of the pathway</h2>
+  <div class="grid g2">
+    <div class="card"><span class="chip det">Detection</span><div class="big" style="margin-top:10px">38% → 55%</div><p>non-urgent GP visits waiting over 7 days, Finland 2021→2025</p></div>
+    <div class="card"><span class="chip ref">Referral</span><div class="big" style="margin-top:10px">99 vs 1.4</div><p>per 10,000 waiting over 6 months for specialist care: North Karelia vs Helsinki (2025)</p></div>
+    <div class="card"><span class="chip det">Screening</span><div class="big" style="margin-top:10px">22 / 22</div><p>areas below the 80% colorectal screening target · men 69% vs women 78%</p></div>
+    <div class="card"><span class="chip out">Outcome</span><div class="big" style="margin-top:10px">63–74%</div><p>colon cancer 5-year survival between counties (Finland 68%)</p></div>
+  </div>
+  <div class="src">THL Sotkanet indicators 6411, 3336, 6103, 3627 (Finnish Cancer Registry), data 2021–2025, retrieved 14 Nov 2026</div>
+</section>
+
+<section class="s">
+  <div class="k">How it works</div>
+  <h2>From 8 public indicators to a county action plan</h2>
+  <div class="flow">
+    <div class="card"><span class="chip det">1 Detection</span><p style="font-size:18px">Screening participation ×3, GP access</p></div><div class="arrow">→</div>
+    <div class="card"><span class="chip ref">2 Referral</span><p style="font-size:18px">Specialist waits &gt; 6 months</p></div><div class="arrow">→</div>
+    <div class="card blind"><span class="chip tre">3 Treatment</span><p style="font-size:18px">No public data, shown as the blind spot</p></div><div class="arrow">→</div>
+    <div class="card"><span class="chip out">4 Outcome</span><p style="font-size:18px">5-year survival</p></div>
+  </div>
+  <div class="grid g3" style="margin-top:28px">
+    <div class="card"><b style="font-size:22px">Gap locator</b><p style="font-size:18px">z-scores vs other counties → the stage where the gap emerges. Robust (multi-year) gaps are kept apart from noise. Early warnings for fast deterioration.</p></div>
+    <div class="card"><b style="font-size:22px">Action engine</b><p style="font-size:18px">11 evidence-based actions, triggered by the measured gaps and ranked per county.</p></div>
+    <div class="card"><b style="font-size:22px">Gemini analyst</b><p style="font-size:18px">2-minute brief in Finnish or English. Every claim cited, every number auto-checked against the data.</p></div>
+  </div>
+</section>
+
+<section class="s">
+  <div class="k">Example: North Karelia</div>
+  <h2>Detection is on par. The gap emerges at referral, and survival follows.</h2>
+  <div class="grid g4">
+    <div class="card"><span class="chip det">Detection</span><p><b>On par</b><br><span class="muted" style="font-size:17px">but cervical screening 68%, lowest in Finland</span></p></div>
+    <div class="card gap"><span class="chip ref">Referral</span><p><b>Clearly behind</b><br><span class="muted" style="font-size:17px">99 / 10,000 waiting &gt; 6 mo, rank 18/18</span></p></div>
+    <div class="card blind"><span class="chip tre">Treatment</span><p><b>No public data</b><br><span class="muted" style="font-size:17px">measure with THL 21/2016</span></p></div>
+    <div class="card"><span class="chip out">Outcome</span><p><b>Behind</b><br><span class="muted" style="font-size:17px">colon survival 66% vs 74% best</span></p></div>
+  </div>
+  <p style="margin-top:26px"><b>90-day plan:</b> ① suspected-cancer referral fast track with direct access to diagnostics ② diagnostic-centre route for non-specific symptoms ③ nurse navigator ④ start measuring time-to-treatment.</p>
+  <div class="src">THL Sotkanet 3336, 3620, 3627 · CancerPath AI county page /county/14</div>
+</section>
+
+<section class="s">
+  <div class="k">Actionability</div>
+  <h2>Every action is something a county or health center can start on Monday</h2>
+  <div class="grid g2">
+    <div class="card">
+      <span class="chip ref">Referral · County + university hospital (YTA)</span>
+      <p style="font-size:24px;margin:12px 0 6px"><b>Standardised 'suspicion of cancer' referral with direct access to diagnostics</b></p>
+      <ul style="font-size:18px">
+        <li><b>Owner:</b> county medical director + referral unit</li>
+        <li><b>First 90 days:</b> agree on criteria for the top-5 cancers, add a 48-hour triage flag, open direct imaging slots</li>
+        <li><b>KPI:</b> ≥ 90% triaged within 2 days; referral → test ≤ 14 days</li>
+        <li><b>Roadmap:</b> 2.5.2, 3.1.2 · <b>Evidence:</b> Danish cancer patient pathways (BMC Cancer 2015)</li>
+      </ul>
+    </div>
+    <div>
+      <p><b>Built into every action:</b></p>
+      <ul>
+        <li>the measured gap that triggered it</li>
+        <li>an owner (role), 3 first steps and a KPI</li>
+        <li>the national roadmap action it delivers</li>
+        <li>peer-reviewed or official evidence, verified</li>
+        <li>an effort estimate</li>
+      </ul>
+      <p class="muted" style="font-size:18px;margin-top:14px">Includes Finnish evidence, e.g. the HPV self-sampling trial for screening non-attenders (Int J Cancer 2011).</p>
+    </div>
+  </div>
+</section>
+
+<section class="s">
+  <div class="k">Data quality &amp; transparency</div>
+  <h2>Built so a decision-maker can trust it, and so a judge can check it</h2>
+  <div class="grid g3">
+    <div class="card"><b style="font-size:22px">Sourced</b><p style="font-size:18px">Source badge on every number. Reproducible ETL from the THL REST API. Strategy facts cited by page.</p></div>
+    <div class="card"><b style="font-size:22px">Honest</b><p style="font-size:18px">Robust vs possible gaps. Small-number flags. A limitations page. No "lives saved" claims without data.</p></div>
+    <div class="card"><b style="font-size:22px">Guarded AI</b><p style="font-size:18px">Gemini only sees cited facts. Any number missing from the source data is flagged. A rule-based fallback means the demo never breaks.</p></div>
+  </div>
+  <p style="margin-top:28px" class="muted">Public aggregate data only, no patient data · MIT licensed · Next.js, d3-geo, Google Gemini API</p>
+</section>
+
+<section class="s dark">
+  <div class="k">Beyond Junction</div>
+  <h2 style="color:#fff">Proposal: a 90-day pilot with one wellbeing services county</h2>
+  <ul class="muted" style="color:#e2e8f0">
+    <li>Connect the county's own referral and treatment dates (THL 21/2016 definitions) to fill the blind spot</li>
+    <li>Monthly pathway report for the county board, with Finnish briefs</li>
+    <li>Track the 3 prioritised actions against their KPIs</li>
+    <li>Scale nationally with FICAN as roadmap actions 3.1.2 / 3.1.4 / 3.2 roll out</li>
+  </ul>
+  <p style="font-size:32px;margin-top:50px;color:#fff"><b>CancerPath AI: from <i>where the gap is</i> to <i>what to do on Monday</i>.</b></p>
+  <p class="muted">cancerpath-ai.vercel.app</p>
+</section>
+
+</body>
+</html>
