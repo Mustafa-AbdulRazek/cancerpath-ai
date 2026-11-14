@@ -1,21 +1,27 @@
 import { countyByCode, findingsFor, ordinal, phrase, stageMeta, stageScores, weakestStage } from "./analysis";
 import { actionsFor, doFirst } from "./actions";
 
+type F = ReturnType<typeof findingsFor>[number];
+/** Order findings by gap size, but always put cancer mortality (SMR) after cancer-specific indicators. */
+export const survivalFirst = (a: F, b: F) => Number(a.key === "smr") - Number(b.key === "smr") || a.z! - b.z!;
+
 /** Deterministic county summary used on the county page, the printable brief and as the AI fallback. */
 export function countySummary(code: string) {
   const c = countyByCode[code];
   const weak = weakestStage(code);
   const clear = !!weak && weak.score < -0.35;
   const findings = findingsFor(code);
-  const usable = findings.filter((f) => f.z != null && !f.ind.noisy && !f.smallDiff);
-  const inStage = clear ? usable.filter((f) => f.ind.stage === weak!.stage).sort((a, b) => a.z! - b.z!)[0] : undefined;
+  const usable = findings.filter((f) => f.z != null && !f.ind.noisy && !f.smallDiff && !f.burdenOnly);
+  // Lead with cancer-specific survival; mortality mixes incidence and care, so it is only a supporting fact.
+  const inStage = clear ? usable.filter((f) => f.ind.stage === weak!.stage).sort(survivalFirst)[0] : undefined;
+  const smrToo = clear && weak!.stage === "outcome" && inStage?.key !== "smr" ? usable.find((f) => f.key === "smr") : undefined;
   const det = stageScores(code).find((s) => s.stage === "detection")?.score;
   const downstream = clear && weak!.stage === "outcome" && det != null && det >= -0.2;
   const fact = (f?: (typeof findings)[number]) => (f ? `${phrase(f)}${f.key === "smr" ? "" : " in Finland"}, ${ordinal(f.rank!)} of ${f.of}` : "");
 
   let message: string;
   if (downstream) {
-    message = `${c.name}'s cancer outcomes lag (${fact(inStage)}) while its detection measures are on par. The gap may be created after the first GP contact (recognising symptoms, referral and diagnostics), a step that is not publicly measured; measuring time to treatment (A7) would show it.`;
+    message = `${c.name}'s cancer outcomes lag (${fact(inStage)}${smrToo ? `; ${phrase(smrToo)}` : ""}) while its detection measures are on par. The gap may be created after the first GP contact (recognising symptoms, referral and diagnostics), a step that is not publicly measured; measuring time to treatment (A7) would show it.`;
   } else if (clear) {
     message = `${c.name} falls furthest behind at the ${stageMeta(weak!.stage).label.toLowerCase()} step${inStage ? `: ${fact(inStage)}` : ""}.`;
   } else {
@@ -42,7 +48,7 @@ export function keyMessageFi(code: string) {
   const s = countySummary(code);
   const c = s.county;
   const name = c.nameFi; // e.g. "Päijät-Hämeen hyvinvointialue", used as a label
-  const f = s.weak ? findingsFor(code).filter((x) => x.z != null && !x.ind.noisy && !x.smallDiff && x.ind.stage === s.weak!.stage).sort((a, b) => a.z! - b.z!)[0] : undefined;
+  const f = s.weak ? findingsFor(code).filter((x) => x.z != null && !x.ind.noisy && !x.smallDiff && !x.burdenOnly && x.ind.stage === s.weak!.stage).sort(survivalFirst)[0] : undefined;
   const pct = f && f.ind.unit.startsWith("%") ? " %" : "";
   const num = (v?: number) => (v == null ? "–" : String(Math.round(v * 10) / 10).replace(".", ",") + pct);
   const fact = f
@@ -50,7 +56,9 @@ export function keyMessageFi(code: string) {
       ? `syöpäkuolleisuus ${Math.abs(Math.round(f.value! - 100))} % ${f.value! >= 100 ? "yli" : "alle"} ikärakenteen perusteella odotetun, sija ${f.rank}/${f.of}`
       : `${FI_NAMES[f.key] ?? f.ind.short} ${num(f.value)} vs. ${num(f.national)} koko maassa, sija ${f.rank}/${f.of}`
     : "";
-  if (s.downstream) return `${name}: syövänhoidon tulokset jäävät jälkeen (${fact}), vaikka varhaisen toteamisen mittarit ovat maan tasolla. Ero voi syntyä ensimmäisen lääkärikäynnin jälkeen (oireiden tunnistaminen, lähete ja diagnostiikka), jota ei mitata julkisesti; hoitoonpääsyn ajan mittaaminen (A7) toisi sen näkyviin.`;
+  const smr = s.downstream ? findingsFor(code).find((x) => x.key === "smr" && x.z != null && !x.smallDiff && !x.burdenOnly && x.z < 0) : undefined;
+  const smrFi = smr && smr.value != null ? `; syöpäkuolleisuus ${Math.abs(Math.round(smr.value - 100))} % yli ikärakenteen perusteella odotetun` : "";
+  if (s.downstream) return `${name}: syövänhoidon tulokset jäävät jälkeen (${fact}${smrFi}), vaikka varhaisen toteamisen mittarit ovat maan tasolla. Ero voi syntyä ensimmäisen lääkärikäynnin jälkeen (oireiden tunnistaminen, lähete ja diagnostiikka), jota ei mitata julkisesti; hoitoonpääsyn ajan mittaaminen (A7) toisi sen näkyviin.`;
   if (s.weak) return `${name}: hoitopolku jää eniten jälkeen vaiheessa "${FI_STAGES[s.weak.stage]}"${fact ? `: ${fact}` : ""}.`;
   return `${name}: mikään hoitopolun vaihe ei jää selvästi jälkeen julkisissa mittareissa. Seuraava askel on mitata hoitoonpääsyn aika lähetteestä hoitoon.`;
 }

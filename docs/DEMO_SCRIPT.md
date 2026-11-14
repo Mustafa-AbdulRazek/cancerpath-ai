@@ -1,6 +1,6 @@
 # Pitch pack: three versions + hard questions
 
-**Before any pitch:** open https://cancerpath-ai.vercel.app on the laptop. At 13:50, generate the English and Finnish briefs for Päijät-Häme (/county/09) and North Karelia (/county/14) so they load from the cache. Keep a screen recording of the full demo on the laptop as an offline backup, plus a phone hotspot.
+**Before any pitch:** open https://cancerpath-ai.vercel.app on the laptop. At 13:50, generate the English and Finnish briefs for Päijät-Häme (/county/09), North Karelia (/county/14) and Satakunta (/county/06) so they load from the cache. Keep a screen recording of the full demo on the laptop as an offline backup, plus a phone hotspot.
 
 ## A. 90-second table pitch (peer review, non-experts)
 1. (15 s) "A third of Finnish cancer patients needed three or more visits before diagnosis, and no county can see where the time goes."
@@ -19,7 +19,7 @@
 ## C. 5-minute AstraZeneca demo
 1. (30 s) Hook as above.
 2. (45 s) Goal 3 framing: equal outcomes. Colon survival differs by 11 points between counties, breast by 5. Show finding 2 (no county-level treatment times) and finding 3 (screening misses women born abroad).
-3. (60 s) Päijät-Häme page: on-par detection, behind outcome → gap after the first GP contact. Contrast with North Karelia (referral step).
+3. (60 s) Päijät-Häme page: on-par detection, behind outcome → gap after the first GP contact. Contrast with North Karelia (referral step). If asked about mortality, open Satakunta (/county/06): survival and mortality both behind → A13.
 4. (60 s) Actionability: "Do this first", open A7 (validate dates first, Hilmo), A6, and a screening action with reach and "learn from".
 4b. (20 s) Future: scroll to "Looking ahead to 2035" (North Karelia cervical: moving away, ≈ 64% by 2035) and the map view "on track for 80% by 2035?".
 5. (40 s) Trust: open "Show all indicators", the hatched HUS area on the map, and /sources.
@@ -35,5 +35,8 @@
 - **"Why should Päijät-Häme believe the plan?"** It starts by measuring, with the county's own data, the step we can't see. The other actions have Nordic or Finnish evidence and a county to learn from.
 - **"What does a pilot cost, and who evaluates it?"** About 0.5 FTE analyst for 3 months using existing records, with no new IT system. Evaluation by a university partner, like AstraZeneca's 2025 kidney-disease pilot (8,248 invited, 4,018 took part).
 - **"What about mortality?"** We built an age-standardised mortality ratio by county (SMR, 2021–25) with confidence intervals from Statistics Finland data. Four counties are significantly higher: Kymenlaakso +11%, Satakunta +10%, Lapland +6%, South Ostrobothnia +5%. Päijät-Häme is average, so its problem is colon cancer specifically.
-- **"Isn't this only about the past?"** No. Each county gets a projection to 2035 against the 80% screening target ("on track", "too slow" or "moving away", with a band), and the data refreshes itself every week, so in 2028 it shows 2028 data. It also projects demand from ageing: expected cancer deaths +17% nationally by 2035, up to +31% in Uusimaa. It runs as a loop: diagnose, prescribe, project, then monitor with each refresh.
+- **"Isn't higher mortality just more cancer (smoking, industry)?"** Partly, yes: mortality mixes how many people get cancer with how well they are treated. So we count it as a care gap only where survival is also behind. Satakunta (colon survival 64%, mortality +10%) and South Ostrobothnia qualify. Kymenlaakso and Lapland have on-par survival, so the app shows them as "higher burden", not a care gap, and does not give them the lung fast track.
+- **"Why lung (A13) when you have no county lung data?"** Lung cancer causes the most cancer deaths in Finland and is furthest from the Nordic level (men 17% vs 30% in Norway). Where mortality and survival are both behind, it is the first pathway to check, and A7 would confirm it with the county's own data.
+- **"Why is Päijät-Häme your headline but 11th in your ranking?"** The headline is about colon cancer specifically, where it is last (63%). Its all-cancer mortality is average, which is exactly why a county needs pathway data per cancer type (A7) and not only all-cancer totals.
+- **"Isn't this only about the past?"** No. Each county gets a projection to 2035 against the 80% screening target ("on track", "too slow" or "moving away", with a band). The data pipeline can be re-run on any day (`npm run data`; a weekly refresh is ready but paused until results are final), so in 2028 it shows 2028 data. It also projects demand from ageing: expected cancer deaths +17% nationally by 2035, up to +31% in Uusimaa. It runs as a loop: diagnose, prescribe, project, then monitor with each refresh.
 - **"Is this AI or a dashboard?"** The analytics engine finds and ranks gaps and actions; Gemini turns them into a cited board brief, with a check that ties each number to its source.

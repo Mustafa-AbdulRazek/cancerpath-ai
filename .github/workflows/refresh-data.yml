@@ -3,8 +3,9 @@
 name: Refresh data
 
 on:
-  schedule:
-    - cron: "0 5 * * 1" # every Monday 05:00 UTC
+  # Weekly schedule paused until Junction results are final (no bot commits after the submission deadline).
+  # schedule:
+  #   - cron: "0 5 * * 1" # every Monday 05:00 UTC
   workflow_dispatch: {}
 
 permissions:

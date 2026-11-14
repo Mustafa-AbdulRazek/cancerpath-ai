@@ -1,5 +1,5 @@
 import { HORIZON, screeningTrajectory, STATUS_LABEL, TARGET, TARGET_KEYS } from "./projection";
-import { data, EXCLUDED, SERIES_NOTES, UUSIMAA_HUS, countyCorrelationExcluding, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
+import { data, EXCLUDED, SERIES_NOTES, SMR_CAVEAT, UUSIMAA_HUS, countyCorrelationExcluding, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
 import { actionsFor, STRATEGY_URL, ROADMAP_URL, THL_2016_URL } from "./actions";
 
 export type Source = { id: string; label: string; url: string };
@@ -49,6 +49,8 @@ export function countyContext(code: string) {
         ` In worst quartile ${x.persistence.worstQ} of last ${x.persistence.years} years.${t}` +
         (x.ind.noisy ? " (UNRELIABLE: small numbers, do not use as evidence of a gap.)" : "") +
         (x.key === "smr" && data.mortality?.byCounty[code] ? ` 95% CI ${data.mortality.byCounty[code].lo}–${data.mortality.byCounty[code].hi} (as ratio; Finland = 1); observed ${data.mortality.byCounty[code].observed} vs expected ${data.mortality.byCounty[code].expected} deaths ${data.mortality.years}.` : "") +
+        (x.key === "smr" ? ` NOTE: ${SMR_CAVEAT}` : "") +
+        (x.burdenOnly ? " (Survival in this county is on par, so this is a higher cancer burden, NOT a care-quality gap: never present it as evidence of worse care.)" : "") +
         (x.smallDiff ? " (Within normal variation of Finland: treat as no meaningful difference.)" : "")
     );
   }

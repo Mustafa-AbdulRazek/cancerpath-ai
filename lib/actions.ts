@@ -245,7 +245,7 @@ export const ACTIONS: Action[] = [
     stage: "outcome",
     level: "County + university hospital (YTA)",
     triggers: ["surv_colon", "surv_breast", "smr"],
-    why: "Survival below the national level, or higher age-standardised cancer mortality, suggests differences in diagnostics or treatment practice.",
+    why: "Survival below the national level (with higher age-standardised cancer mortality where present) suggests differences in diagnostics or treatment practice.",
     what: "Run a yearly audit of guideline adherence for colorectal and breast cancer and present every new case at a joint (remote) MDT with the university hospital.",
     first90: [
       "Pick 5 audit indicators per cancer from national/Nordic guidelines",
@@ -316,7 +316,7 @@ export const ACTIONS: Action[] = [
     stage: "outcome",
     level: "County + university hospital (YTA)",
     triggers: ["smr"],
-    why: "Cancer mortality is higher than the county's age structure predicts. Lung cancer is where Finland is furthest from the Nordic level, which is a strategy target for poor-prognosis cancers.",
+    why: "Cancer mortality is higher than the county's age structure predicts, and cancer survival is also behind. We have no county-level lung data, but lung cancer causes the most cancer deaths in Finland and is where Finland is furthest from the Nordic level (a strategy target for poor-prognosis cancers), so it is the first pathway to check. Measuring time to treatment (A7) would confirm it.",
     what: "Let GPs order chest CT directly for patients with lung red-flag symptoms (e.g. persistent cough or haemoptysis in smokers), and set target times from imaging to the lung team and to treatment.",
     first90: [
       "Agree on red-flag criteria and direct CT referral with radiology and the lung team",

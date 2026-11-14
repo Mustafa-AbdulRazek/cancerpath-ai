@@ -88,7 +88,7 @@ if (data.mortality && !data.values.smr) {
     id: 13, key: "smr", stage: "outcome", label: "Cancer mortality, age-standardised ratio (SMR × 100, Finland = 100), " + data.mortality.years, short: "Cancer mortality (SMR)",
     unit: "index", better: "lower", gender: "total",
     titleFi: "Kuolleet syöpään (C00–C97), epäsuorasti ikävakioitu kuolleisuussuhde " + data.mortality.years, titleEn: null,
-    descriptionFi: "Observed cancer deaths divided by the deaths expected with Finland's age-specific death rates. 95% CI = SMR × exp(±1.96/√observed).",
+    descriptionFi: "Observed cancer deaths divided by the deaths expected with Finland's age-specific death rates. 95% CI = SMR × exp(±1.96/√observed). Mortality mixes incidence and care: it counts as an outcome gap only where survival is also behind.",
     organization: "Statistics Finland (CancerPath AI calculation)", dataUpdated: null, url: SMR_URL, api: SMR_URL,
   } as never);
 }
@@ -207,9 +207,29 @@ export type IndicatorFinding = {
   smallDiff: boolean;
   signal: "strong" | "moderate" | "none";
   earlyWarning: boolean;
+  /** Cancer mortality above expected while survival is on par: likely more cancer, not worse care (see SMR_CAVEAT). */
+  burdenOnly?: boolean;
 };
 
+/**
+ * Mortality = incidence × case fatality, so a high SMR can mean "more people get cancer" (smoking, occupational history),
+ * not worse care. We only let it count as an outcome gap when cancer-specific survival in the same county is also behind.
+ * Otherwise it is shown as a burden signal and scored as on par.
+ */
+export const SMR_CAVEAT = "Mortality reflects both how many people get cancer and how well they are treated, so on its own it is not a care-quality measure. We count it as an outcome gap only where cancer survival in the same county is also behind.";
+
 export function findingsFor(code: string): IndicatorFinding[] {
+  const out = findingsRaw(code);
+  const smr = out.find((f) => f.key === "smr");
+  const survivalBehind = out.some((f) => f.ind.stage === "outcome" && f.key !== "smr" && f.z != null && f.z <= -0.5 && !f.smallDiff && !f.ind.noisy);
+  if (smr && smr.z != null && smr.z < 0 && !smr.smallDiff && !survivalBehind) {
+    smr.burdenOnly = true;
+    smr.signal = "none";
+  }
+  return out;
+}
+
+function findingsRaw(code: string): IndicatorFinding[] {
   return scoredIndicators.map((ind) => {
     const year = latestYear(ind.key);
     const v = value(ind.key, code, year);
@@ -240,7 +260,8 @@ export function stageScores(code: string): StageScore[] {
   return STAGES.map(({ key }) => {
     const fs = f.filter((x) => x.ind.stage === key);
     // Differences inside the survival noise band count as "on par" (z = 0), so they cannot make a stage look behind.
-    const zs = fs.filter((x) => x.z != null && !x.ind.noisy).map((x) => (x.smallDiff ? 0 : x.z!));
+    // Mortality without a survival gap is a burden signal, not a care gap: also scored as on par.
+    const zs = fs.filter((x) => x.z != null && !x.ind.noisy).map((x) => (x.smallDiff || x.burdenOnly ? 0 : x.z!));
     return { stage: key, findings: fs, hasData: zs.length > 0, score: zs.length ? mean(zs) : undefined };
   });
 }

@@ -5,10 +5,11 @@ import Scatter from "@/components/Scatter";
 import { Section, SourceBadge, Sparkline } from "@/components/ui";
 import {
   counties, countyByCode, countyCorrelation, phrase, countyCorrelationExcluding, data, findingsFor, fmt, fmtU, indicatorByKey, latestYear,
-  nationalSeries, nationalValue, ordinal, overallScore, rank, scoredIndicators, series, stageMeta, stageRank, STAGES, UUSIMAA_HUS, value,
+  nationalSeries, nationalValue, ordinal, overallScore, rank, series, stageMeta, stageRank, STAGES, UUSIMAA_HUS, value,
   weakestStage, zScore,
 } from "@/lib/analysis";
 import { STRATEGY_URL, THL_2016_URL } from "@/lib/actions";
+import { survivalFirst } from "@/lib/brief";
 import { FACTS } from "@/lib/facts";
 import { HORIZON, nationalSummary, screeningTrajectory, STATUS_COLOR, STATUS_LABEL, TARGET } from "@/lib/projection";
 
@@ -65,7 +66,7 @@ export default function Home() {
         })
       ),
     },
-    ...(["screen_cervical", "screen_breast"] as const).map((key): MapMode => ({
+    ...(["screen_cervical"] as const).map((key): MapMode => ({
       key: "traj-" + key,
       label: `${indicatorByKey[key].short}: on track for ${TARGET}% by ${HORIZON}?`,
       legend: (["meets", "at-risk", "on-track", "too-slow", "moving-away"] as const).map((s) => ({ color: STATUS_COLOR[s], label: STATUS_LABEL[s] })),
@@ -88,10 +89,8 @@ export default function Home() {
         return [c.code, { code: c.code, name: c.name, fill, label: g == null ? "No data" : `+${fmt(g)}% expected cancer deaths by ${data.demand!.to}`, sub: g == null ? undefined : `70+ population +${fmt(data.demand!.byCounty[c.code].pop70Growth)}%` }];
       })),
     } as MapMode] : []),
-    indicatorMode("surv_colon"),
-    indicatorMode("screen_cervical"),
-    indicatorMode("spec_wait6m"),
-    ...scoredIndicators.filter((i) => !["surv_colon", "screen_cervical", "spec_wait6m"].includes(i.key)).map((i) => indicatorMode(i.key)),
+    // Kept to the views the story needs (clarity); every indicator is still on each county page.
+    ...["surv_colon", "smr", "screen_cervical", "screen_breast", "spec_wait6m", "phc_wait7"].filter((k) => indicatorByKey[k]).map((k) => indicatorMode(k)),
   ];
 
   return (
@@ -122,8 +121,8 @@ export default function Home() {
             {ranked.map(({ c, weak }, i) => {
               const clear = weak && weak.score < -0.35;
               const top = findingsFor(c.code)
-                .filter((f) => f.z != null && !f.ind.noisy && !f.smallDiff && (!clear || f.ind.stage === weak!.stage))
-                .sort((a, b) => a.z! - b.z!)[0];
+                .filter((f) => f.z != null && !f.ind.noisy && !f.smallDiff && !f.burdenOnly && (!clear || f.ind.stage === weak!.stage))
+                .sort(survivalFirst)[0];
               const sr = clear ? stageRank(c.code, weak!.stage) : undefined;
               return (
                 <li key={c.code}>
@@ -185,6 +184,29 @@ export default function Home() {
         </ol>
       </Section>
 
+      <Section title="Recommendations at national level" aside={<span className="text-xs text-[var(--muted)]">for STM, THL and FICAN</span>}>
+        <ol className="grid gap-4 md:grid-cols-3">
+          <li><p className="font-medium">1. A mandatory &quot;suspected cancer&quot; flag in the national eReferral</p><p className="text-sm text-[var(--muted)]">So suspected cancer never joins the general specialist queue. Roadmap 2.5.2.</p></li>
+          <li><p className="font-medium">2. Publish referral-to-treatment times by county and cancer type in Sotkanet</p><p className="text-sm text-[var(--muted)]">Using the THL 21/2016 definitions, after validating the dates in Hilmo. Roadmap 3.1.2 and 3.1.4.</p></li>
+          <li><p className="font-medium">3. Make stage recording a national quality indicator, target 70%</p><p className="text-sm text-[var(--muted)]">It is 42% today and 72% in Pirkanmaa. Roadmap 3.1.4 and 3.2.</p></li>
+        </ol>
+      </Section>
+
+      <Section title="Proposed next step: a 90-day pilot with one county">
+        <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
+          <div className="space-y-2 text-sm">
+            <p><span className="font-medium">What:</span> measure time from referral to treatment with the county&apos;s own data (A7), and add a suspected-cancer referral flag with a 48-hour triage (A5).</p>
+            <p><span className="font-medium">Where:</span> start in <Link href="/county/08" className="text-[var(--accent)] hover:underline">Pirkanmaa</Link>, which has Finland&apos;s most complete stage data (72%), then <Link href="/county/09" className="text-[var(--accent)] hover:underline">Päijät-Häme</Link>, where colon cancer survival fell most.</p>
+            <p><span className="font-medium">Data needed:</span> referral dates, cancer diagnosis codes (ICD-10 C00–C97) and first-treatment procedure codes; validate the dates first.</p>
+            <p><span className="font-medium">Success at day 90:</span> the first monthly time-to-treatment report per cancer type, compared with the THL targets.</p>
+          </div>
+          <div className="rounded-[6px] bg-[var(--accent-soft)] p-4 text-sm">
+            <p className="font-medium">A model that already works</p>
+            <p className="mt-1 text-[var(--muted)]">{FACTS.azPilot.text}. A pilot here would follow the same shape: one county, a lab or data partner, a university evaluation and a reusable tool for all 22 counties.</p>
+            <p className="mt-1 text-xs"><SourceBadge href={FACTS.azPilot.url} label="AstraZeneca, 8 Oct 2025" /></p>
+          </div>
+        </div>
+      </Section>
       <Section title="Finland overview">
         <div className="grid gap-8 lg:grid-cols-2">
           <div>
@@ -192,7 +214,7 @@ export default function Home() {
             <table className="mt-2 w-full text-sm">
               <tbody className="divide-y divide-[var(--line)]">
                 <tr><td className="py-2 pr-3">Survival at the Nordic level</td><td className="py-2 pr-3 text-[var(--muted)]">Colon 5-year survival: Finland {fmt(nationalValue("surv_colon"))}%, counties {fmt(colon.worst?.[1])}–{fmt(colon.best?.[1])}%</td><td className="py-2 font-medium text-[var(--better)]">Measured</td></tr>
-                <tr><td className="py-2 pr-3">Cancer mortality −10%</td><td className="py-2 pr-3 text-[var(--muted)]">About 13,300 deaths a year. Age-standardised by county (SMR, {data.mortality?.years}): {smrHigh.length} counties significantly higher than their age structure predicts ({smrHigh.join(", ")})</td><td className="py-2 font-medium text-[var(--better)]">Measured</td></tr>
+                <tr><td className="py-2 pr-3">Cancer mortality −10%</td><td className="py-2 pr-3 text-[var(--muted)]">About 13,300 deaths a year. Age-standardised by county (SMR, {data.mortality?.years}): {smrHigh.length} counties significantly higher than their age structure predicts ({smrHigh.join(", ")}). Mortality mixes how many people get cancer with how well they are treated, so we count it as a care gap only where survival is also behind</td><td className="py-2 font-medium text-[var(--better)]">Measured</td></tr>
                 <tr><td className="py-2 pr-3">Treatment within target times</td><td className="py-2 pr-3 text-[var(--muted)]">Only a national count over the 180-day limit; no county or cancer-type data (action A7)</td><td className="py-2 font-medium text-[var(--worse)]">Not measured</td></tr>
                 {nationalSummary().filter((s) => s.insufficient < s.n).map((s) => (
                   <tr key={s.key}><td className="py-2 pr-3">{s.label} {TARGET}% by {HORIZON} (Goal 2)</td><td className="py-2 pr-3 text-[var(--muted)]">At current trends: {s.meets + s.onTrack} of {s.n} counties meet or reach it in time; {s.tooSlow} too slow; {s.away + s.atRisk} falling or moving away</td><td className="py-2 font-medium" style={{ color: s.meets + s.onTrack >= s.n / 2 ? "var(--better)" : "var(--worse)" }}>Projected</td></tr>
@@ -220,7 +242,7 @@ export default function Home() {
           <div className="space-y-2 text-sm">
             <p>{FACTS.nordic.text}.</p>
             <p>{FACTS.lungWait.text}.</p>
-            <p className="text-[var(--muted)]">The strategy's Goal 3 targets Nordic-level survival for poor-prognosis cancers, including +14 points for lung cancer. Counties with significantly higher cancer mortality get action A13: direct GP access to chest CT for red-flag symptoms, with target times.</p>
+            <p className="text-[var(--muted)]">The strategy's Goal 3 targets Nordic-level survival for poor-prognosis cancers, including +14 points for lung cancer. There is no county-level lung data, so counties with both higher cancer mortality and lower survival get action A13 as the first pathway to check: direct GP access to chest CT for red-flag symptoms, with target times.</p>
             <p className="text-xs text-[var(--muted)]"><SourceBadge href={FACTS.nordic.url} label="IHE 2026 (NORDCAN, Khalife 2025)" />, <SourceBadge href={STRATEGY_URL} label="Strategy p. 5" /></p>
           </div>
           <table className="w-full self-start text-sm">
@@ -234,29 +256,6 @@ export default function Home() {
         </div>
       </Section>
 
-      <Section title="Recommendations at national level" aside={<span className="text-xs text-[var(--muted)]">for STM, THL and FICAN</span>}>
-        <ol className="grid gap-4 md:grid-cols-3">
-          <li><p className="font-medium">1. A mandatory &quot;suspected cancer&quot; flag in the national eReferral</p><p className="text-sm text-[var(--muted)]">So suspected cancer never joins the general specialist queue. Roadmap 2.5.2.</p></li>
-          <li><p className="font-medium">2. Publish referral-to-treatment times by county and cancer type in Sotkanet</p><p className="text-sm text-[var(--muted)]">Using the THL 21/2016 definitions, after validating the dates in Hilmo. Roadmap 3.1.2 and 3.1.4.</p></li>
-          <li><p className="font-medium">3. Make stage recording a national quality indicator, target 70%</p><p className="text-sm text-[var(--muted)]">It is 42% today and 72% in Pirkanmaa. Roadmap 3.1.4 and 3.2.</p></li>
-        </ol>
-      </Section>
-
-      <Section title="Proposed next step: a 90-day pilot with one county">
-        <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
-          <div className="space-y-2 text-sm">
-            <p><span className="font-medium">What:</span> measure time from referral to treatment with the county&apos;s own data (A7), and add a suspected-cancer referral flag with a 48-hour triage (A5).</p>
-            <p><span className="font-medium">Where:</span> start in <Link href="/county/08" className="text-[var(--accent)] hover:underline">Pirkanmaa</Link>, which has Finland&apos;s most complete stage data (72%), then <Link href="/county/09" className="text-[var(--accent)] hover:underline">Päijät-Häme</Link>, where colon cancer survival fell most.</p>
-            <p><span className="font-medium">Data needed:</span> referral dates, cancer diagnosis codes (ICD-10 C00–C97) and first-treatment procedure codes; validate the dates first.</p>
-            <p><span className="font-medium">Success at day 90:</span> the first monthly time-to-treatment report per cancer type, compared with the THL targets.</p>
-          </div>
-          <div className="rounded-[6px] bg-[var(--accent-soft)] p-4 text-sm">
-            <p className="font-medium">A model that already works</p>
-            <p className="mt-1 text-[var(--muted)]">{FACTS.azPilot.text}. A pilot here would follow the same shape: one county, a lab or data partner, a university evaluation and a reusable tool for all 22 counties.</p>
-            <p className="mt-1 text-xs"><SourceBadge href={FACTS.azPilot.url} label="AstraZeneca, 8 Oct 2025" /></p>
-          </div>
-        </div>
-      </Section>
     </div>
   );
 }

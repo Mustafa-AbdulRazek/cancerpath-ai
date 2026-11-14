@@ -7,7 +7,7 @@ import { Section, SourceBadge, Sparkline } from "@/components/ui";
 import { DO_FIRST_RULE, THL_2016_URL } from "@/lib/actions";
 import {
   cancersPerYear, countyByCode, counties, data, EXCLUDED, findingsFor, fmt, fmtU, latestYear, nationalSeries, nationalValue, ordinal,
-  SCREEN_BAND, series, SERIES_NOTES, stageMeta, stageRank, stageScores, STAGES, value,
+  SCREEN_BAND, series, SERIES_NOTES, SMR_CAVEAT, stageMeta, stageRank, stageScores, STAGES, value,
 } from "@/lib/analysis";
 import { countySummary } from "@/lib/brief";
 import TrajectoryChart from "@/components/TrajectoryChart";
@@ -89,7 +89,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
                 <div className="text-xs text-[var(--muted)]">
                   {sc.score == null
                     ? st.key === "treatment" ? "No public data by county" : "Data missing or incomplete"
-                    : r?.rank ? `${ordinal(r.rank)} of ${r.of} counties` : ""}
+                    : r?.rank ? `Step overall: ${ordinal(r.rank)} of ${r.of}` : ""}
                 </div>
                 {isWeak && <div className="mt-1 text-xs font-medium text-[var(--worse)]">The gap emerges here</div>}
                 {st.key === "referral" && sc.score != null && <div className="mt-1 text-[11px] text-[var(--muted)]">All-specialty queue, used as a proxy</div>}
@@ -200,10 +200,11 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
                       {f.value == null ? (EXCLUDED[f.key]?.[code] ? "Excluded: incomplete HUS reporting" : "No data") :
                         f.ind.noisy ? "Small numbers" :
                         f.smallDiff ? "Within normal variation" :
+                        f.burdenOnly ? <span title={SMR_CAVEAT}>Higher burden; survival on par, so not counted as a care gap</span> :
                         f.signal === "strong" ? <span className="text-[var(--worse)]">Lasting gap ({f.persistence.worstQ} of {f.persistence.years} years in bottom quarter)</span> :
                         f.signal === "moderate" ? "Possible gap" : "—"}
                       {f.earlyWarning && <div className="text-[var(--worse)]">Worsening</div>}
-                      {f.key === "smr" && data.mortality?.byCounty[code] && <div>95% CI {fmt(data.mortality.byCounty[code].lo * 100)}–{fmt(data.mortality.byCounty[code].hi * 100)}</div>}
+                      {f.key === "smr" && data.mortality?.byCounty[code] && <div>95% CI {fmt(data.mortality.byCounty[code].lo * 100)}–{fmt(data.mortality.byCounty[code].hi * 100)} · mixes incidence and care</div>}
                     </td>
                     <td><SourceBadge href={f.ind.url} label={`Sotkanet ${f.ind.id}`} /></td>
                   </tr>
