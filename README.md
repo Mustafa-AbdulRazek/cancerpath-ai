@@ -6,6 +6,8 @@ Built at **Junction 2026** for the **AstraZeneca "Equal Care Across Finland"** c
 
 CancerPath AI combines public indicators for all 21 wellbeing services counties plus the City of Helsinki. For each county it finds the stage where the cancer pathway falls behind: **detection → referral → diagnosis/treatment → outcome**. It then turns that gap into a ranked **90-day action plan**: owner, KPI, evidence, and the National Cancer Strategy roadmap action it implements. A **Gemini-powered analyst** writes a 2-minute decision brief, in English or Finnish, that cites a source for every claim. An automatic **number check** flags any figure that does not appear in the source data.
 
+**Live demo:** https://cancerpath-ai.vercel.app
+
 ## What it shows (Goal 3 of the National Cancer Strategy 2026–2035)
 
 | Pathway stage | Indicators (THL Sotkanet) |

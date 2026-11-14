@@ -43,3 +43,5 @@ next-env.d.ts
 
 # raw API dumps (regenerate with npm run data)
 /data/raw/
+
+.vercel

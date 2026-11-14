@@ -49,5 +49,5 @@ Next.js 15, TypeScript, Tailwind, d3-geo SVG map, Google Gemini API (gemini-flas
 Gemini generates grounded county decision briefs and Q&A in English and Finnish from a structured, cited context. We add citation enforcement, a numeric hallucination check and a deterministic fallback.
 
 **Source code:** https://github.com/Mustafa-AbdulRazek/cancerpath-ai
-**Demo:** (Vercel URL)
+**Demo:** https://cancerpath-ai.vercel.app
 **Video:** (YouTube/Vimeo, ≤ 2:00, public/unlisted)
