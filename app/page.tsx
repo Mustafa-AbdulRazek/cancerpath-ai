@@ -10,6 +10,7 @@ import {
 } from "@/lib/analysis";
 import { STRATEGY_URL, THL_2016_URL } from "@/lib/actions";
 import { FACTS } from "@/lib/facts";
+import { HORIZON, nationalSummary, screeningTrajectory, STATUS_COLOR, STATUS_LABEL, TARGET } from "@/lib/projection";
 
 const zColor = (z?: number) => (z == null ? "#eef0f3" : z <= -1 ? "#b42318" : z <= -0.5 ? "#f2b8b5" : z < 0.5 ? "#e5e7eb" : z < 1 ? "#99d5cf" : "#0f766e");
 const DIVERGING = [
@@ -64,6 +65,18 @@ export default function Home() {
         })
       ),
     },
+    ...(["screen_cervical", "screen_breast"] as const).map((key): MapMode => ({
+      key: "traj-" + key,
+      label: `${indicatorByKey[key].short}: on track for ${TARGET}% by ${HORIZON}?`,
+      legend: (["meets", "at-risk", "on-track", "too-slow", "moving-away"] as const).map((s) => ({ color: STATUS_COLOR[s], label: STATUS_LABEL[s] })),
+      note: `Linear trend of the last 8 years, projected to ${HORIZON} (strategy target: ${TARGET}% in every county). A projection, not a forecast.`,
+      datum: Object.fromEntries(
+        counties.map((c) => {
+          const t = screeningTrajectory(key, c.code);
+          return [c.code, { code: c.code, name: c.name, fill: t ? STATUS_COLOR[t.status] : "#eef0f3", label: t ? STATUS_LABEL[t.status] : "No data", sub: t ? `${t.last.value}% in ${t.last.year}${t.reachYear ? `; reaches ${TARGET}% ${t.reachYear > 2050 ? "after 2050" : "around " + t.reachYear}` : ""}` : undefined }];
+        })
+      ),
+    })),
     indicatorMode("surv_colon"),
     indicatorMode("screen_cervical"),
     indicatorMode("spec_wait6m"),
@@ -170,6 +183,9 @@ export default function Home() {
                 <tr><td className="py-2 pr-3">Survival at the Nordic level</td><td className="py-2 pr-3 text-[var(--muted)]">Colon 5-year survival: Finland {fmt(nationalValue("surv_colon"))}%, counties {fmt(colon.worst?.[1])}–{fmt(colon.best?.[1])}%</td><td className="py-2 font-medium text-[var(--better)]">Measured</td></tr>
                 <tr><td className="py-2 pr-3">Cancer mortality −10%</td><td className="py-2 pr-3 text-[var(--muted)]">About 13,300 deaths a year. Age-standardised by county (SMR, {data.mortality?.years}): {smrHigh.length} counties significantly higher than their age structure predicts ({smrHigh.join(", ")})</td><td className="py-2 font-medium text-[var(--better)]">Measured</td></tr>
                 <tr><td className="py-2 pr-3">Treatment within target times</td><td className="py-2 pr-3 text-[var(--muted)]">Only a national count over the 180-day limit; no county or cancer-type data (action A7)</td><td className="py-2 font-medium text-[var(--worse)]">Not measured</td></tr>
+                {nationalSummary().filter((s) => s.insufficient < s.n).map((s) => (
+                  <tr key={s.key}><td className="py-2 pr-3">{s.label} {TARGET}% by {HORIZON} (Goal 2)</td><td className="py-2 pr-3 text-[var(--muted)]">At current trends: {s.meets + s.onTrack} of {s.n} counties meet or reach it in time; {s.tooSlow} too slow; {s.away + s.atRisk} falling or moving away</td><td className="py-2 font-medium" style={{ color: s.meets + s.onTrack >= s.n / 2 ? "var(--better)" : "var(--worse)" }}>Projected</td></tr>
+                ))}
                 <tr><td className="py-2 pr-3">Stage recorded at diagnosis</td><td className="py-2 pr-3 text-[var(--muted)]">42% nationally, Pirkanmaa 72%, target 70% (action A12)</td><td className="py-2 font-medium text-[var(--worse)]">Uneven</td></tr>
               </tbody>
             </table>
@@ -177,9 +193,9 @@ export default function Home() {
           </div>
           <div>
             <h3 className="font-medium">Breast screening and share of foreign citizens, by county</h3>
-            <Scatter pts={eq.pts} xLabel={`Foreign citizens, % (${eq.yearB})`} yLabel={`Breast screening, % (${eq.yearA})`} />
+            <Scatter pts={eq.pts} xLabel={`Foreign citizens, % (${eq.yearB})`} yLabel={`Breast screening, % (${eq.yearA})`} excludable={UUSIMAA_HUS} excludeLabel="Exclude Uusimaa and Helsinki" />
             <p className="text-xs text-[var(--muted)]">
-              Across all 22 areas the link is strong (r = {eq.r.toFixed(2)}), but it is mostly a capital-region pattern: without Uusimaa and Helsinki it is r = {eqEx.r.toFixed(2)}. The individual-level figures above confirm the gap. {FACTS.screenRegions.text}, which matches this data. <SourceBadge href={FACTS.screenRegions.url} label="Syöpäjärjestöt 2026" />
+              Across all 22 areas the link is strong (r = {eq.r.toFixed(2)}), but it is mostly a capital-region pattern: tick the box to exclude Uusimaa and Helsinki (r = {eqEx.r.toFixed(2)}). Hover a dot for values, click to open the county. The individual-level figures above confirm the gap. {FACTS.screenRegions.text}, which matches this data. <SourceBadge href={FACTS.screenRegions.url} label="Syöpäjärjestöt 2026" />
             </p>
           </div>
         </div>

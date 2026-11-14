@@ -18,6 +18,8 @@ Goal 3 of Finland's National Cancer Strategy 2026–2035 promises equal outcomes
 
 - **Pathway view:** detection (screening, GP access), referral (specialist queue, a proxy), diagnosis → treatment (not publicly measured, shown as a gap), outcome (5-year survival). It shows where the county falls behind, as a plain rank ("21st of 22").
 - **90-day plan:** 5 ranked actions per county, plus a "Do this first" pick with its rule shown. Each action has an owner, first 90 days, KPI, people reached, resources, a county to **learn from**, the **national roadmap action** it delivers (2.5.2, 3.1.2, 3.1.4, 3.2…) and peer-reviewed or official evidence.
+- **Looking ahead to 2035:** each county's screening trend is projected against the 80% target, with a 95% band (e.g. North Karelia's cervical screening is moving away: ≈ 64% by 2035). A map view shows which counties are on track.
+- **Always current:** a weekly GitHub Action rebuilds the data from the THL and Statistics Finland APIs, with years computed from today. A county opening it in 2028 sees 2028 data. The plan's baseline becomes the monitoring loop for the roadmap 2026–2031.
 - **National recommendations:** a suspected-cancer flag in the national eReferral; publishing referral-to-treatment times by county and cancer type (THL 21/2016 definitions); stage recording as a quality indicator (target 70%).
 - **Pilot proposal:** 90 days in one county (Pirkanmaa first, then Päijät-Häme), modelled on AstraZeneca Finland's 2025 kidney-disease screening pilot.
 

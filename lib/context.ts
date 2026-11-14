@@ -1,3 +1,4 @@
+import { HORIZON, screeningTrajectory, STATUS_LABEL, TARGET, TARGET_KEYS } from "./projection";
 import { data, EXCLUDED, SERIES_NOTES, UUSIMAA_HUS, countyCorrelationExcluding, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
 import { actionsFor, STRATEGY_URL, ROADMAP_URL, THL_2016_URL } from "./actions";
 
@@ -62,6 +63,13 @@ export function countyContext(code: string) {
       (weak ? `. Weakest measured stage: ${stageMeta(weak.stage).label}.` : "")
   );
   sources.push({ id: "P1", label: "CancerPath AI pathway stage scores (method: /sources)", url: "https://cancerpath-ai.vercel.app/sources" });
+  for (const k of TARGET_KEYS) {
+    const tr = screeningTrajectory(k, code);
+    if (!tr) continue;
+    const lab = indicators.find((i) => i.key === k)!.label;
+    lines.push(`[T1] Projection to ${HORIZON} (linear trend, not a forecast), ${lab}: ${STATUS_LABEL[tr.status]}` + (tr.status === "insufficient" ? ` (only ${tr.trend.n} years of data).` : tr.reachYear ? `; reaches ${TARGET}% ${tr.reachYear > 2050 ? "after 2050" : "around " + tr.reachYear}.` : `; about ${Math.round(tr.at2035)}% by ${HORIZON}.`));
+  }
+  sources.push({ id: "T1", label: "CancerPath AI projection to 2035 (linear trend of THL Sotkanet data)", url: "https://cancerpath-ai.vercel.app/sources" });
   lines.push(`RECOMMENDED ACTIONS (from the CancerPath AI evidence library):`);
   for (const a of acts) {
     lines.push(`[${a.id}] ${a.title}. Owner: ${a.owner}. KPI: ${a.kpi}.${a.impact ? ` Impact estimate: about ${a.impact.perRound} more people screened per round (about ${a.impact.perYear} per year) if participation rises from ${a.impact.current}% to 80% (eligible: ${a.impact.bandLabel}).` : ""}${a.resources ? ` Resources (team estimate): ${a.resources}.` : ""} Roadmap actions: ${a.roadmap.join(", ")}. Evidence: ${a.evidence.map((e) => e.label).join("; ")}.`);

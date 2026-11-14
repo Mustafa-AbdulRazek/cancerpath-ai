@@ -10,6 +10,8 @@ import {
   SCREEN_BAND, series, SERIES_NOTES, stageMeta, stageRank, stageScores, STAGES, value,
 } from "@/lib/analysis";
 import { countySummary } from "@/lib/brief";
+import TrajectoryChart from "@/components/TrajectoryChart";
+import { HORIZON, MIN_YEARS, reachLabel, screeningTrajectory, STATUS_COLOR, STATUS_LABEL, survivalGapTrend, TARGET, TARGET_KEYS } from "@/lib/projection";
 
 export function generateStaticParams() {
   return counties.map((c) => ({ code: c.code }));
@@ -115,6 +117,44 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
           {s.plan.map((a, i) => <ActionCard key={a.id} a={a} rankNo={i + 1} />)}
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">Ranked by gap size, distance to target and people reached. Open an action to see the 90-day steps, resources and evidence.</p>
+      </Section>
+
+      <Section title={`Looking ahead to ${HORIZON}`} aside={<span className="text-xs text-[var(--muted)]">Projection = recent linear trend with a 95% band, not a forecast</span>}>
+        <div className="grid gap-6 md:grid-cols-3">
+          {TARGET_KEYS.map((k) => {
+            const tr = screeningTrajectory(k, code);
+            const f = findings.find((x) => x.key === k)!;
+            if (!tr) return null;
+            const col = STATUS_COLOR[tr.status];
+            return (
+              <div key={k}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3 className="text-sm font-medium">{f.ind.short}</h3>
+                  <span className="text-xs font-medium" style={{ color: tr.status === "insufficient" ? "var(--muted)" : col }}>{STATUS_LABEL[tr.status]}</span>
+                </div>
+                <TrajectoryChart history={series(k, code)} projection={tr.status === "insufficient" ? undefined : tr.projection} national={nationalSeries(k)} color={tr.status === "insufficient" ? "#6b7280" : col} />
+                <p className="text-xs text-[var(--muted)]">
+                  {tr.status === "insufficient" && `Only ${tr.trend.n} years of data (fewer than ${MIN_YEARS}); the programme is still being rolled out, so we do not project it.`}
+                  {tr.status === "meets" && `${tr.last.value}% in ${tr.last.year}; at the current trend it stays above ${TARGET}% to ${HORIZON}.`}
+                  {tr.status === "at-risk" && `${tr.last.value}% in ${tr.last.year}, but falling: at the current trend ≈ ${fmt(tr.at2035)}% by ${HORIZON}.`}
+                  {tr.status === "on-track" && `${tr.last.value}% in ${tr.last.year}; at the current trend it reaches ${TARGET}% ${reachLabel(tr.reachYear)}.`}
+                  {tr.status === "too-slow" && `${tr.last.value}% in ${tr.last.year}; at the current trend it reaches ${TARGET}% ${reachLabel(tr.reachYear)}, after the ${HORIZON} target.`}
+                  {tr.status === "moving-away" && `${tr.last.value}% in ${tr.last.year} and not rising: at the current trend ≈ ${fmt(tr.at2035)}% by ${HORIZON}.`}
+                  {" "}Dashed grey: Finland.
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        {(() => {
+          const g = survivalGapTrend("surv_colon", code);
+          if (!g || Math.abs(g.slope) < 0.3) return null;
+          return (
+            <p className="mt-4 text-sm">
+              <span className="font-medium">Colon cancer survival gap to Finland:</span> {g.last.value > 0 ? "+" : ""}{fmt(g.last.value)} points in {g.last.year}, {g.slope < 0 ? "widening" : "narrowing"} by about {fmt(Math.abs(g.slope))} points a year since {g.from}. {g.slope < 0 && g.last.value < 0 ? "If nothing changes, the gap keeps growing towards 2035." : ""}
+            </p>
+          );
+        })()}
       </Section>
 
       <section className="grid gap-8 lg:grid-cols-2">

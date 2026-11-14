@@ -52,6 +52,7 @@ export default function SourcesPage() {
             <li>For every county we compute a direction-adjusted z-score against the other counties (negative = behind). A stage score is the mean z of its indicators. The <b>weakest stage</b> is where the county falls furthest behind.</li>
             <li><b>Robust gap</b>: z ≤ −1 and in the worst quartile in ≥ 3 of the last 5 years. This avoids over-reading one noisy year.</li>
             <li><b>Early warning</b>: the indicator worsened by ≥ 5 percentage points (or ≥ 15 per 10,000 for waiting) over the last 3 years.</li>
+            <li><b>Projection to 2035</b>: a linear trend of the last 8 years with a 95% prediction band, compared with the 80% screening target. It is labelled a projection, not a forecast. Series with fewer than 5 years (colorectal screening, started 2022) are not projected.</li>
             <li>Actions are triggered by gaps in their linked indicators and ranked by gap size, target shortfall and trend.</li>
             <li>The AI analyst (Google Gemini) gets only the cited facts. A post-check flags any number that does not appear in the source data. If the AI is unavailable, a rule-based brief is shown.</li>
           </ul>
