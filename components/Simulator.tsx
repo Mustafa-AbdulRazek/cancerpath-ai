@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-type Prog = { key: string; label: string; current: number; best: number; target: number; source: string; eligible?: number; bandLabel?: string; intervalYears?: number };
+type Prog = { key: string; label: string; current: number; best: number; target: number; source: string; eligible?: number; bandLabel?: string; intervalYears?: number; popYear?: string };
 
 /** Transparent what-if: arithmetic on the county's own numbers, no hidden effect sizes. */
 export default function Simulator({ programmes, countyName }: { programmes: Prog[]; countyName: string }) {
@@ -34,7 +34,7 @@ export default function Simulator({ programmes, countyName }: { programmes: Prog
         </div>
       </div>
       <p className="text-xs text-[var(--muted)]">
-        Eligible group: {p.bandLabel ?? "programme age band"}{p.eligible ? `, ${p.eligible.toLocaleString("en-GB")} people (Statistics Finland 2025)` : ""}. Participation from {p.source}. We do not turn this into &quot;lives saved&quot;: that needs local stage data, which is not public.
+        Eligible group: {p.bandLabel ?? "programme age band"}{p.eligible ? `, ${p.eligible.toLocaleString("en-GB")} people (Statistics Finland ${p.popYear ?? ""})` : ""}. Participation from {p.source}. We do not turn this into &quot;lives saved&quot;: that needs local stage data, which is not public.
       </p>
     </div>
   );

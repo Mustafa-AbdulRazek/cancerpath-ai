@@ -47,7 +47,7 @@ export function countyContext(code: string) {
         (x.ind.target ? ` Strategy target ${x.ind.target}% → ${x.belowTarget ? "BELOW target" : "meets target"}.` : "") +
         ` In worst quartile ${x.persistence.worstQ} of last ${x.persistence.years} years.${t}` +
         (x.ind.noisy ? " (UNRELIABLE: small numbers, do not use as evidence of a gap.)" : "") +
-        (x.key === "smr" && data.mortality?.byCounty[code] ? ` 95% CI ${data.mortality.byCounty[code].lo}–${data.mortality.byCounty[code].hi} (as ratio; Finland = 1); observed ${data.mortality.byCounty[code].observed} vs expected ${data.mortality.byCounty[code].expected} deaths 2021–2025.` : "") +
+        (x.key === "smr" && data.mortality?.byCounty[code] ? ` 95% CI ${data.mortality.byCounty[code].lo}–${data.mortality.byCounty[code].hi} (as ratio; Finland = 1); observed ${data.mortality.byCounty[code].observed} vs expected ${data.mortality.byCounty[code].expected} deaths ${data.mortality.years}.` : "") +
         (x.smallDiff ? " (Within normal variation of Finland: treat as no meaningful difference.)" : "")
     );
   }

@@ -75,17 +75,18 @@ export const SERIES_NOTES: Record<string, string> = {
 };
 /**
  * Cancer mortality as a scored outcome indicator: indirectly age-standardised mortality ratio (SMR) × 100, Finland = 100,
- * 2021–2025 pooled (Statistics Finland 13u5 + 11az + 11re). Stored under year 2025 so it ranks like the other indicators.
+ * latest 5 years pooled (Statistics Finland 13u5 + 11az + 11re). Stored under the last year of the window so it ranks like the other indicators.
  */
 export const SMR_URL = "https://pxdata.stat.fi/PxWeb/pxweb/en/StatFin/StatFin__ksyyt/statfin_ksyyt_pxt_13u5.px/";
 if (data.mortality && !data.values.smr) {
   data.values.smr = {};
-  for (const [code, m] of Object.entries(data.mortality.byCounty)) data.values.smr[code] = { 2025: Math.round(m.smr * 1000) / 10 };
-  data.national.smr = { 2025: 100 };
+  const smrYear = Number(data.mortality.years.slice(-4));
+  for (const [code, m] of Object.entries(data.mortality.byCounty)) data.values.smr[code] = { [smrYear]: Math.round(m.smr * 1000) / 10 };
+  data.national.smr = { [smrYear]: 100 };
   data.indicators.push({
-    id: 13, key: "smr", stage: "outcome", label: "Cancer mortality, age-standardised ratio (SMR × 100, Finland = 100), 2021–2025", short: "Cancer mortality (SMR)",
+    id: 13, key: "smr", stage: "outcome", label: "Cancer mortality, age-standardised ratio (SMR × 100, Finland = 100), " + data.mortality.years, short: "Cancer mortality (SMR)",
     unit: "index", better: "lower", gender: "total",
-    titleFi: "Kuolleet syöpään (C00–C97), epäsuorasti ikävakioitu kuolleisuussuhde 2021–2025", titleEn: null,
+    titleFi: "Kuolleet syöpään (C00–C97), epäsuorasti ikävakioitu kuolleisuussuhde " + data.mortality.years, titleEn: null,
     descriptionFi: "Observed cancer deaths divided by the deaths expected with Finland's age-specific death rates. 95% CI = SMR × exp(±1.96/√observed).",
     organization: "Statistics Finland (CancerPath AI calculation)", dataUpdated: null, url: SMR_URL, api: SMR_URL,
   } as never);

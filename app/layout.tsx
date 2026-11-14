@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { data } from "@/lib/analysis";
 
 const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter", display: "swap" });
 
@@ -35,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
         <footer className="mx-auto max-w-6xl border-t border-[var(--line)] px-4 py-5 text-xs text-[var(--muted)] print:hidden">
-          Public aggregate data only (THL, Finnish Cancer Registry, Statistics Finland). MIT licence. Built at Junction 2026 for the AstraZeneca challenge. <Link href="/sources" className="underline">Sources and limitations</Link>
+          Public aggregate data only (THL, Finnish Cancer Registry, Statistics Finland), refreshed automatically every week; last refresh {new Date(data.generatedAt).toLocaleDateString("en-GB")}. MIT licence. Built at Junction 2026 for the AstraZeneca challenge. <Link href="/sources" className="underline">Sources and limitations</Link>
         </footer>
       </body>
     </html>

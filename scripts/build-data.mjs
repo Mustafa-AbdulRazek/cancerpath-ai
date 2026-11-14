@@ -7,7 +7,18 @@ import { geoArea } from "d3-geo";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, "lib", "data", "dataset.json");
-const YEARS = Array.from({ length: 11 }, (_, i) => 2015 + i);
+// Years are computed from today, so the pipeline keeps working as new data is published.
+const THIS_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: THIS_YEAR - 2015 + 1 }, (_, i) => 2015 + i);
+
+/** Latest years available in a Statistics Finland PxWeb table (read from its metadata). */
+async function pxYears(path, n = 1) {
+  const r = await fetch(`https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/${path}`);
+  if (!r.ok) throw new Error("metadata " + path + " " + r.status);
+  const meta = await r.json();
+  const v = meta.variables.find((x) => x.code === "timeperiod_y");
+  return v.values.slice(-n);
+}
 const NATIONAL = 658;
 
 // Indicator registry: every number in the app traces back to one of these entries.
@@ -83,7 +94,7 @@ for (const ind of INDICATORS) {
 // Eligible screening populations per county (Statistics Finland 11re, municipalities aggregated via Sotkanet memberOf).
 // Programme age bands (conservative core bands): breast women 50–69 every 2 years; cervical women 30–65 every 5 years;
 // colorectal men+women 60–68 every 2 years (programme expanding to 56–74 by 2031).
-const POP_YEAR = "2025";
+const [POP_YEAR] = await pxYears("vaerak/11re.px", 1);
 const kuntaToCounty = {};
 const byIdR = Object.fromEntries(regionsRaw.map((r) => [r.id, r]));
 for (const r of regionsRaw.filter((x) => x.category === "KUNTA")) {
@@ -140,7 +151,7 @@ const eligibleMeta = {
 // Observed: StatFin 13u5 (deaths by wellbeing services county, cause 04-21 malignant neoplasms C00–C97).
 // Expected: national age-specific deaths (StatFin 11az, same cause and years) × county population share in each age band
 // (StatFin 11re, population 31.12.2023, the midpoint year). SMR = observed / expected, 95% CI = SMR × exp(±1.96/√observed).
-const SMR_YEARS = ["2021", "2022", "2023", "2024", "2025"];
+const SMR_YEARS = await pxYears("ksyyt/13u5.px", 5); // latest 5 years with cause-of-death data
 const AGE_BANDS = ["000", "1-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90-94", "95-"];
 const bandOf = (age) => {
   if (age === 0) return "000";
@@ -199,7 +210,7 @@ const popJs = await pxPost("vaerak/11re.px", [
   { code: "alue_23_20260101", selection: { filter: "item", values: Object.keys(kuntaToCounty) } },
   { code: "ikaryhma_10_20180101", selection: { filter: "item", values: allAges } },
   { code: "sukupuoli_9_20180101", selection: { filter: "item", values: ["SSS"] } },
-  { code: "timeperiod_y", selection: { filter: "item", values: ["2023"] } },
+  { code: "timeperiod_y", selection: { filter: "item", values: [SMR_YEARS[2] <= POP_YEAR ? SMR_YEARS[2] : POP_YEAR] } }, // midpoint year of the SMR window
 ]);
 const popBand = {}; // popBand[county][band]
 const natPopBand = {};
@@ -211,7 +222,7 @@ for (const { codes, v } of cells(popJs)) {
   if (!county) continue;
   (popBand[county] ??= {})[b] = (popBand[county][b] || 0) + v;
 }
-const mortality = { years: "2021–2025", cause: "Malignant neoplasms (C00–C97)", byCounty: {} };
+const mortality = { years: `${SMR_YEARS[0]}–${SMR_YEARS[SMR_YEARS.length - 1]}`, cause: "Malignant neoplasms (C00–C97)", byCounty: {} };
 for (const c of counties) {
   const O = observed[c.code];
   const E = AGE_BANDS.reduce((s, b) => s + ((natDeaths[b] || 0) * (popBand[c.code]?.[b] || 0)) / (natPopBand[b] || 1), 0);

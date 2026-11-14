@@ -35,7 +35,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
     .map((k) => {
       const f = findings.find((x) => x.key === k)!;
       const band = SCREEN_BAND[k];
-      return { key: k, label: f.ind.short, current: f.value ?? 0, best: f.best?.[1] ?? 0, target: 80, source: `THL Sotkanet ${f.ind.id}, ${f.year}`, eligible: data.eligible?.[code]?.[band], bandLabel: data.eligibleMeta?.bands[band].label, intervalYears: data.eligibleMeta?.bands[band].intervalYears };
+      return { key: k, label: f.ind.short, current: f.value ?? 0, best: f.best?.[1] ?? 0, target: 80, source: `THL Sotkanet ${f.ind.id}, ${f.year}`, eligible: data.eligible?.[code]?.[band], bandLabel: data.eligibleMeta?.bands[band].label, intervalYears: data.eligibleMeta?.bands[band].intervalYears, popYear: data.eligibleMeta?.year };
     })
     .sort((a, b) => a.current - b.current);
 
