@@ -43,7 +43,7 @@ export default function Home() {
       key,
       label: `${ind.short} (${y})`,
       legend: DIVERGING,
-      note: `Finland ${fmtU(nationalValue(key, y), ind.unit)}. Source: THL Sotkanet ${ind.id}.`,
+      note: `Finland ${fmtU(nationalValue(key, y), ind.unit)}. Source: ${key === "smr" ? "Statistics Finland, CancerPath SMR calculation" : "THL Sotkanet " + ind.id}.`,
       datum: Object.fromEntries(
         counties.map((c) => {
           const v = value(key, c.code, y);

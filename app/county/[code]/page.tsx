@@ -7,7 +7,7 @@ import { Section, SourceBadge, Sparkline } from "@/components/ui";
 import { DO_FIRST_RULE, THL_2016_URL } from "@/lib/actions";
 import {
   cancersPerYear, countyByCode, counties, data, EXCLUDED, findingsFor, fmt, fmtU, latestYear, nationalSeries, nationalValue, ordinal,
-  SCREEN_BAND, series, SERIES_NOTES, SMR_CAVEAT, stageMeta, stageRank, stageScores, STAGES, value,
+  SCREEN_BAND, series, SERIES_NOTES, SMR_CAVEAT, sourceLabel, stageMeta, stageRank, stageScores, STAGES, value,
 } from "@/lib/analysis";
 import { countySummary } from "@/lib/brief";
 import TrajectoryChart from "@/components/TrajectoryChart";
@@ -206,7 +206,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
                       {f.earlyWarning && <div className="text-[var(--worse)]">Worsening</div>}
                       {f.key === "smr" && data.mortality?.byCounty[code] && <div>95% CI {fmt(data.mortality.byCounty[code].lo * 100)}–{fmt(data.mortality.byCounty[code].hi * 100)} · mixes incidence and care</div>}
                     </td>
-                    <td><SourceBadge href={f.ind.url} label={`Sotkanet ${f.ind.id}`} /></td>
+                    <td><SourceBadge href={f.ind.url} label={sourceLabel(f.ind)} /></td>
                   </tr>
                 );
               })}

@@ -23,7 +23,7 @@ export const DOC_FACTS: { id: string; text: string; source: Source }[] = [
 
 export function sourceForIndicator(key: string): Source {
   const ind = indicators.find((i) => i.key === key)!;
-  return { id: `S${ind.id}${ind.gender === "total" ? "" : ind.gender[0]}`, label: `THL Sotkanet ${ind.id}: ${ind.titleFi}`, url: ind.url };
+  return { id: `S${ind.id}${ind.gender === "total" ? "" : ind.gender[0]}`, label: ind.key === "smr" ? `Statistics Finland (CancerPath SMR calculation): ${ind.titleFi}` : `THL Sotkanet ${ind.id}: ${ind.titleFi}`, url: ind.url };
 }
 
 export function countyContext(code: string) {

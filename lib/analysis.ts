@@ -383,3 +383,8 @@ export function phrase(f: { key: string; value?: number; national?: number; ind:
 export function approx(n: number) {
   return n >= 1000 ? Math.round(n / 100) * 100 : Math.round(n / 10) * 10;
 }
+
+/** Short source label for an indicator: Sotkanet ID, or our own Statistics Finland calculation for mortality. */
+export function sourceLabel(ind: IndicatorMeta) {
+  return ind.key === "smr" ? "Statistics Finland (SMR calc.)" : `Sotkanet ${ind.id}`;
+}
