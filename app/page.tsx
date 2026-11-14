@@ -77,6 +77,17 @@ export default function Home() {
         })
       ),
     })),
+    ...(data.demand ? [{
+      key: "demand",
+      label: `Cancer care demand from ageing, ${data.demand.from}→${data.demand.to}`,
+      legend: [{ color: "#f3d9a4", label: "under +10%" }, { color: "#e3a857", label: "+10–20%" }, { color: "#b9651b", label: "+20–25%" }, { color: "#7a3410", label: "over +25%" }],
+      note: `Growth in expected cancer deaths from ageing alone (Finland +${fmt(data.demand.national.deathsGrowth)}%). Statistics Finland population projection 2024 × today's age-specific rates.`,
+      datum: Object.fromEntries(counties.map((c) => {
+        const g = data.demand!.byCounty[c.code]?.deathsGrowth;
+        const fill = g == null ? "#eef0f3" : g < 10 ? "#f3d9a4" : g < 20 ? "#e3a857" : g < 25 ? "#b9651b" : "#7a3410";
+        return [c.code, { code: c.code, name: c.name, fill, label: g == null ? "No data" : `+${fmt(g)}% expected cancer deaths by ${data.demand!.to}`, sub: g == null ? undefined : `70+ population +${fmt(data.demand!.byCounty[c.code].pop70Growth)}%` }];
+      })),
+    } as MapMode] : []),
     indicatorMode("surv_colon"),
     indicatorMode("screen_cervical"),
     indicatorMode("spec_wait6m"),
@@ -186,6 +197,9 @@ export default function Home() {
                 {nationalSummary().filter((s) => s.insufficient < s.n).map((s) => (
                   <tr key={s.key}><td className="py-2 pr-3">{s.label} {TARGET}% by {HORIZON} (Goal 2)</td><td className="py-2 pr-3 text-[var(--muted)]">At current trends: {s.meets + s.onTrack} of {s.n} counties meet or reach it in time; {s.tooSlow} too slow; {s.away + s.atRisk} falling or moving away</td><td className="py-2 font-medium" style={{ color: s.meets + s.onTrack >= s.n / 2 ? "var(--better)" : "var(--worse)" }}>Projected</td></tr>
                 ))}
+                {data.demand && (
+                  <tr><td className="py-2 pr-3">Demand to {data.demand.to} (planning)</td><td className="py-2 pr-3 text-[var(--muted)]">Ageing alone raises expected cancer deaths by {fmt(data.demand.national.deathsGrowth)}% nationally; fastest in Uusimaa (up to +{fmt(Math.max(...Object.values(data.demand.byCounty).map((x) => x.deathsGrowth)))}%), slowest in the east (from +{fmt(Math.min(...Object.values(data.demand.byCounty).map((x) => x.deathsGrowth)))}%)</td><td className="py-2 font-medium text-[var(--muted)]">Projected</td></tr>
+                )}
                 <tr><td className="py-2 pr-3">Stage recorded at diagnosis</td><td className="py-2 pr-3 text-[var(--muted)]">42% nationally, Pirkanmaa 72%, target 70% (action A12)</td><td className="py-2 font-medium text-[var(--worse)]">Uneven</td></tr>
               </tbody>
             </table>

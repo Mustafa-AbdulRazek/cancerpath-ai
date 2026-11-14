@@ -234,6 +234,46 @@ for (const c of counties) {
 const sumO = Object.values(mortality.byCounty).reduce((s, x) => s + x.observed, 0), sumE = Object.values(mortality.byCounty).reduce((s, x) => s + x.expected, 0);
 console.log("SMR: counties", Object.keys(mortality.byCounty).length, "sum O/E", (sumO / sumE).toFixed(3), "national deaths", Object.values(natDeaths).reduce((a, b) => a + b, 0));
 
+// Future demand from ageing (Statistics Finland population projection 2024, table 14wx, municipalities → counties).
+// Expected cancer deaths = national age-specific cancer death rates (latest 5 years, from the SMR step) × projected population.
+// This isolates the effect of ageing; it assumes today's age-specific rates stay constant.
+const projMeta = await (await fetch("https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/vaenn/14wx.px")).json();
+const projYears = projMeta.variables.find((v) => v.code === "timeperiod_y").values;
+const projAreaCode = projMeta.variables.find((v) => v.code.startsWith("alue_")).code;
+const projAreas = new Set(projMeta.variables.find((v) => v.code === projAreaCode).values);
+const DEMAND_FROM = String(Math.max(+projYears[0], THIS_YEAR - 1));
+const DEMAND_TO = projYears.includes("2035") ? "2035" : projYears[projYears.length - 1];
+const projJs = await pxPost("vaenn/14wx.px", [
+  { code: projAreaCode, selection: { filter: "item", values: Object.keys(kuntaToCounty).filter((k) => projAreas.has(k)) } },
+  { code: "timeperiod_y", selection: { filter: "item", values: [DEMAND_FROM, DEMAND_TO] } },
+  { code: "sukupuoli_9_20180101", selection: { filter: "item", values: ["SSS"] } },
+  { code: "ikaryhma_10_20180101", selection: { filter: "item", values: allAges } },
+]);
+const rateBand = Object.fromEntries(AGE_BANDS.map((b) => [b, (natDeaths[b] || 0) / SMR_YEARS.length / (natPopBand[b] || 1)])); // deaths per person-year
+const acc = {}; // acc[county][year] = { expDeaths, pop70 }
+const accNat = {};
+for (const { codes, v } of cells(projJs)) {
+  const county = kuntaToCounty[codes[projAreaCode]];
+  const year = codes.timeperiod_y;
+  const a = codes.ikaryhma_10_20180101 === "100-" ? 100 : +codes.ikaryhma_10_20180101;
+  const e = v * rateBand[bandOf(a)];
+  const p70 = a >= 70 ? v : 0;
+  const n = ((accNat[year] ??= { expDeaths: 0, pop70: 0 }));
+  n.expDeaths += e; n.pop70 += p70;
+  if (!county) continue;
+  const c = ((acc[county] ??= {})[year] ??= { expDeaths: 0, pop70: 0 });
+  c.expDeaths += e; c.pop70 += p70;
+}
+const pct = (a, b) => Math.round(((b - a) / a) * 1000) / 10;
+const demand = { from: DEMAND_FROM, to: DEMAND_TO, source: "Statistics Finland population projection 2024 (14wx) × national age-specific cancer death rates " + SMR_YEARS[0] + "–" + SMR_YEARS[SMR_YEARS.length - 1], byCounty: {}, national: {} };
+for (const c of counties) {
+  const f = acc[c.code]?.[DEMAND_FROM], t = acc[c.code]?.[DEMAND_TO];
+  if (!f || !t) continue;
+  demand.byCounty[c.code] = { deathsGrowth: pct(f.expDeaths, t.expDeaths), pop70Growth: pct(f.pop70, t.pop70), expFrom: Math.round(f.expDeaths), expTo: Math.round(t.expDeaths) };
+}
+demand.national = { deathsGrowth: pct(accNat[DEMAND_FROM].expDeaths, accNat[DEMAND_TO].expDeaths), pop70Growth: pct(accNat[DEMAND_FROM].pop70, accNat[DEMAND_TO].pop70), expFrom: Math.round(accNat[DEMAND_FROM].expDeaths), expTo: Math.round(accNat[DEMAND_TO].expDeaths) };
+console.log("demand", DEMAND_FROM, "→", DEMAND_TO, "national", JSON.stringify(demand.national), "counties", Object.keys(demand.byCounty).length);
+
 // Boundaries (Statistics Finland, CC BY 4.0)
 const geo = await getJson(
   "https://geo.stat.fi/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=tilastointialueet:hyvinvointialue4500k_2025&outputFormat=json&srsName=EPSG:4326"
@@ -266,6 +306,7 @@ const dataset = {
   eligible,
   eligibleMeta,
   mortality,
+  demand,
   geo: { type: "FeatureCollection", features },
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

@@ -32,6 +32,7 @@ type Dataset = {
   national: Record<string, Record<string, number>>;
   geo: GeoJSON.FeatureCollection;
   eligible: Record<string, { breast: number; cervical: number; colorectal: number }>;
+  demand?: { from: string; to: string; source: string; national: { deathsGrowth: number; pop70Growth: number; expFrom: number; expTo: number }; byCounty: Record<string, { deathsGrowth: number; pop70Growth: number; expFrom: number; expTo: number }> };
   mortality?: { years: string; cause: string; byCounty: Record<string, { observed: number; expected: number; smr: number; lo: number; hi: number }> };
   eligibleMeta: { year: string; source: string; url: string; bands: Record<"breast" | "cervical" | "colorectal", { label: string; intervalYears: number }> };
 };

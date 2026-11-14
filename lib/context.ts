@@ -69,6 +69,9 @@ export function countyContext(code: string) {
     const lab = indicators.find((i) => i.key === k)!.label;
     lines.push(`[T1] Projection to ${HORIZON} (linear trend, not a forecast), ${lab}: ${STATUS_LABEL[tr.status]}` + (tr.status === "insufficient" ? ` (only ${tr.trend.n} years of data).` : tr.reachYear ? `; reaches ${TARGET}% ${tr.reachYear > 2050 ? "after 2050" : "around " + tr.reachYear}.` : `; about ${Math.round(tr.at2035)}% by ${HORIZON}.`));
   }
+  const dm = data.demand?.byCounty[code];
+  if (dm && data.demand) lines.push(`[T2] Demand from ageing (projection, assumes constant age-specific rates): by ${data.demand.to} the 70+ population grows ${dm.pop70Growth}% and expected cancer deaths ${dm.deathsGrowth}% (Finland ${data.demand.national.deathsGrowth}%).`);
+  sources.push({ id: "T2", label: "Statistics Finland population projection 2024 × age-specific cancer death rates (CancerPath AI calculation)", url: "https://pxdata.stat.fi/PxWeb/pxweb/en/StatFin/StatFin__vaenn/statfin_vaenn_pxt_14wx.px/" });
   sources.push({ id: "T1", label: "CancerPath AI projection to 2035 (linear trend of THL Sotkanet data)", url: "https://cancerpath-ai.vercel.app/sources" });
   lines.push(`RECOMMENDED ACTIONS (from the CancerPath AI evidence library):`);
   for (const a of acts) {

@@ -146,6 +146,11 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
             );
           })}
         </div>
+        {data.demand?.byCounty[code] && (
+          <p className="mt-4 text-sm">
+            <span className="font-medium">Demand from ageing:</span> by {data.demand.to}, the population aged 70+ grows by {fmt(data.demand.byCounty[code].pop70Growth)}% and expected cancer deaths by about {fmt(data.demand.byCounty[code].deathsGrowth)}% from ageing alone (Finland {fmt(data.demand.national.deathsGrowth)}%). Plan diagnostic, treatment and navigator capacity for this. <span className="text-xs text-[var(--muted)]">Statistics Finland population projection 2024 × today&apos;s age-specific cancer death rates; assumes those rates stay constant.</span>
+          </p>
+        )}
         {(() => {
           const g = survivalGapTrend("surv_colon", code);
           if (!g || Math.abs(g.slope) < 0.3) return null;
