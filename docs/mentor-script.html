@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CancerPath AI – mentor conversation guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 16mm 16mm; }
+  body { font-family: "Inter", "Segoe UI", sans-serif; color: #111827; font-size: 11.5pt; line-height: 1.55; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 2px; color: #0b2545; }
+  h2 { font-size: 14pt; color: #0b4f9c; margin: 22px 0 8px; border-bottom: 2px solid #e8f0fa; padding-bottom: 3px; page-break-after: avoid; }
+  p { margin: 6px 0; }
+  .sub { color: #4b5563; margin-bottom: 14px; }
+  .say { background: #f0f6fd; border-left: 4px solid #0b4f9c; border-radius: 4px; padding: 10px 14px; margin: 8px 0; }
+  .say p { margin: 4px 0; }
+  .tip { color: #4b5563; font-size: 10pt; }
+  ol.steps { padding-left: 0; list-style: none; counter-reset: s; margin: 0; }
+  ol.steps > li { counter-increment: s; position: relative; padding: 8px 0 8px 36px; border-bottom: 1px solid #eef0f3; page-break-inside: avoid; }
+  ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 9px; width: 24px; height: 24px; border-radius: 4px; background: #111827; color: #fff; font-size: 11pt; font-weight: 600; text-align: center; line-height: 24px; }
+  .do { font-weight: 600; }
+  .line { font-style: italic; color: #1f2937; }
+  .q { page-break-inside: avoid; margin: 10px 0; }
+  .q b { color: #0b2545; }
+  .ans { border: 1px dashed #b6bec8; border-radius: 4px; height: 40px; margin-top: 4px; }
+  .pb { page-break-before: always; }
+  .chip { display: inline-block; background: #eef0f3; border-radius: 3px; padding: 0 5px; font-size: 10pt; }
+</style>
+</head>
+<body>
+
+<h1>CancerPath AI</h1>
+<div class="sub">Conversation guide for the AstraZeneca mentor · about 10 minutes · Team TachyKnights</div>
+
+<p><b>Before you go:</b> open <b>cancerpath-ai.vercel.app</b> on your laptop or phone. Have this page and a pen ready.</p>
+
+<h2>Part 1 · Say the idea first (1 minute)</h2>
+<div class="say">
+  <p>"Hi, we're TachyKnights. Thank you for your time."</p>
+  <p>"Finland's cancer strategy says everyone should get equally good cancer care, wherever they live. But today no county can easily see <b>where</b> in the cancer journey its patients lose time: finding the cancer early, getting referred, or starting treatment."</p>
+  <p>"So we built <b>CancerPath AI</b>. For each of the 22 wellbeing services areas, it shows the step where that county falls behind, and it gives a <b>90-day plan</b>: what to do first, who owns it, how to measure it, and the evidence behind it."</p>
+  <p>"It only uses public data from THL, the Cancer Registry and Statistics Finland. Every number has a source."</p>
+  <p>"Can I show you quickly? Then we have a few questions, because we want our ideas to be realistic."</p>
+</div>
+
+<h2>Part 2 · Show the app, step by step (5–6 minutes)</h2>
+<ol class="steps">
+  <li>
+    <div class="do">Home page: point at the map.</div>
+    <div class="line">"Each colour is the step where that county is furthest behind. The striped areas have incomplete data, and we say that openly."</div>
+  </li>
+  <li>
+    <div class="do">Point at the list "Where to look first".</div>
+    <div class="line">"This ranks the counties by their biggest gap. North Karelia is first: its specialist queues are the longest in Finland."</div>
+  </li>
+  <li>
+    <div class="do">Scroll to "Three things the data shows". Read finding 1.</div>
+    <div class="line">"Colon cancer survival differs by 11 points between counties. In Päijät-Häme it fell from 70 to 63 percent, while Finland improved."</div>
+  </li>
+  <li>
+    <div class="do">Click <span class="chip">Open Päijät-Häme</span>.</div>
+    <div class="line">"This is the county page. At the top, one sentence tells you where the gap is."</div>
+  </li>
+  <li>
+    <div class="do">Point at the four boxes in a row (the pathway).</div>
+    <div class="line">"Detection and referral look normal here, but the outcome is behind. So the problem may be after the first doctor visit. That step, diagnosis to treatment, is not measured publicly anywhere."</div>
+  </li>
+  <li>
+    <div class="do">Point at the blue box "Do this first".</div>
+    <div class="line">"Our first recommendation: start measuring time from referral to treatment, with the county's own data and THL's definitions."</div>
+  </li>
+  <li>
+    <div class="do">In "90-day plan", click <span class="chip">Show plan</span> on one action.</div>
+    <div class="line">"Every action has an owner, a target to measure, the first three steps, how many people it reaches, a county to learn from, and the action number in the national roadmap."</div>
+  </li>
+  <li>
+    <div class="do">Scroll to "Looking ahead to 2035".</div>
+    <div class="line">"Here we look forward: at the current pace, will the county reach the 80% screening target by 2035? And how much will ageing increase demand?"</div>
+  </li>
+  <li>
+    <div class="do">Click <span class="chip">Suomi</span>, then <span class="chip">Write brief with Gemini</span>. Wait a few seconds.</div>
+    <div class="line">"The AI writes a short brief for the county board, in Finnish or English. Every sentence cites its source, and the app checks every number against that source."</div>
+  </li>
+  <li>
+    <div class="do">Click <span class="chip">Download 1-page brief</span> (top right).</div>
+    <div class="line">"And this is a one-page version a director can print or email. It works even without the AI."</div>
+  </li>
+  <li>
+    <div class="do">Optional: go back and open North Karelia from the list.</div>
+    <div class="line">"Different county, different gap: here the problem is the referral step, so the plan starts differently."</div>
+  </li>
+</ol>
+<p class="tip">If something is slow, use the "Download 1-page brief" button. It's instant.</p>
+
+<h2 class="pb">Part 3 · Ask the questions (3–4 minutes)</h2>
+<p class="tip">Write down short answers. If she disagrees with something, just say "Thank you, that's really useful" and note it. We'll fix it.</p>
+
+<div class="q"><b>1.</b> "To show referral delays, we use the number of people waiting more than 6 months for <i>any</i> specialist care. It's not cancer-specific. Is that a fair signal, or do suspected cancer patients usually get a separate fast track?"<div class="ans"></div></div>
+
+<div class="q"><b>2.</b> "Looking at our plan, which action would a county really pay for first? And is any of them unrealistic?"<div class="ans"></div></div>
+
+<div class="q"><b>3.</b> "We'd like to suggest a 90-day pilot with one county. Which county would be realistic, and who usually makes that decision there?"<div class="ans"></div></div>
+
+<div class="q"><b>4.</b> "Pirkanmaa records the cancer stage for 72% of patients, but the national level is 42%. Do you know why Pirkanmaa is so much better? Could other counties copy it?"<div class="ans"></div></div>
+
+<div class="q"><b>5.</b> "In Päijät-Häme, colon cancer survival dropped from 70% to 63% in five years. Have you heard about this? Is there an explanation we should mention?"<div class="ans"></div></div>
+
+<div class="q"><b>6.</b> "How does the AstraZeneca judging work on Sunday? Do you visit our table between 10:30 and 14:00, or is there a separate session at 14:00? How much time do we get?"<div class="ans"></div></div>
+
+<div class="q"><b>7.</b> "If AstraZeneca or a county wanted to use a tool like this after Junction, what's the one thing it's missing?"<div class="ans"></div></div>
+
+<div class="q"><b>8.</b> "Could we quote one sentence from you in our submission, as 'AstraZeneca Medical Affairs, mentor interview'? We can leave your name out if you prefer."<div class="ans"></div></div>
+
+<h2>To close</h2>
+<div class="say"><p>"Thank you so much, this really helps. We'll update the tool with your input today."</p></div>
+<p class="tip">After the talk: take a photo of this page with the answers and send it to the team.</p>
+
+</body>
+</html>
