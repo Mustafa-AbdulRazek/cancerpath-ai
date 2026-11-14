@@ -158,6 +158,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
                         f.signal === "strong" ? <span className="text-[var(--worse)]">Lasting gap ({f.persistence.worstQ} of {f.persistence.years} years in bottom quarter)</span> :
                         f.signal === "moderate" ? "Possible gap" : "—"}
                       {f.earlyWarning && <div className="text-[var(--worse)]">Worsening</div>}
+                      {f.key === "smr" && data.mortality?.byCounty[code] && <div>95% CI {fmt(data.mortality.byCounty[code].lo * 100)}–{fmt(data.mortality.byCounty[code].hi * 100)}</div>}
                     </td>
                     <td><SourceBadge href={f.ind.url} label={`Sotkanet ${f.ind.id}`} /></td>
                   </tr>

@@ -1,4 +1,4 @@
-import { EXCLUDED, SERIES_NOTES, UUSIMAA_HUS, countyCorrelationExcluding, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
+import { data, EXCLUDED, SERIES_NOTES, UUSIMAA_HUS, countyCorrelationExcluding, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
 import { actionsFor, STRATEGY_URL, ROADMAP_URL, THL_2016_URL } from "./actions";
 
 export type Source = { id: string; label: string; url: string };
@@ -10,6 +10,7 @@ export const DOC_FACTS: { id: string; text: string; source: Source }[] = [
   { id: "D3", text: "Stage at diagnosis is recorded for 42% of new cancers nationally (Pirkanmaa 72%, most other areas 33–42%, target at least 70%), and data on the time from first symptoms to diagnosis is not collected systematically.", source: { id: "D3", label: "Syöpä 2024 report (via Verkkouutiset 17.6.2026) and National Cancer Strategy p. 30", url: "https://www.verkkouutiset.fi/a/syopatiedoissa-isot-alueelliset-erot-yksi-seutu-erottuu/" } },
   { id: "D10", text: "Referral-to-treatment times are not published by county and cancer type. Nationally, about 600–700 cancer patients (under 2%) exceeded the 180-day treatment limit in 2024; some counties publish waiting statistics for all cancers together.", source: { id: "D10", label: "IHE Cancer Dashboard Finland 2026", url: "https://ihe.se/app/uploads/2026/04/IHE-Cancer-Dashboard-Finland_.pdf" } },
   { id: "D11", text: "In a 2025 survey of 684 cancer patients, a third needed at least three healthcare contacts before diagnosis.", source: { id: "D11", label: "Suomen Syöpäpotilaat survey, 12.3.2025", url: "https://www.sttinfo.fi/tiedote/70972938/kyselyselvitys-joka-kolmas-syopapotilas-kokee-diagnoosin-viivastyneen?publisherId=69820264" } },
+  { id: "D13", text: "Finland has the lowest 5-year survival for all cancers in the Nordic countries (men 69%, women 73%). Lung cancer 5-year survival is 17% for men vs 30% in Norway, and 29% for women vs 37%. A primary-care appointment in the lung cancer pathway takes 14 days in Finland vs 2–7 days elsewhere in the Nordics.", source: { id: "D13", label: "IHE Cancer Dashboard Finland 2026 (NORDCAN; Khalife 2025)", url: "https://ihe.se/app/uploads/2026/04/IHE-Cancer-Dashboard-Finland_.pdf" } },
   { id: "D12", text: "Individual-level screening gaps: breast screening 82% among women with Finnish, Swedish or Sami mother tongue vs 63% for others (2020–21); cervical screening 73% among women born in Finland, 62% born elsewhere in Europe, 46% born in Africa (2019–23).", source: { id: "D12", label: "IHE 2026; Finnish Cancer Registry study 9.11.2026", url: "https://www.sttinfo.fi/tiedote/72484607/tutkimus-kohdunkaulasyovan-seulonta-ei-tavoita-kaikkia-naisia-yhta-hyvin?publisherId=69820264" } },
   { id: "D4", text: "Finland has no unified national system that steers cancer-specific guidelines, care pathways and their monitoring (including access-to-care targets); this maintains regional inequality.", source: { id: "D4", label: "National Cancer Strategy 2026–2035, p. 33", url: STRATEGY_URL } },
   { id: "D5", text: "A national cancer quality registry does not yet exist; regional comparisons are occasional and based on coarse, fragmented measures.", source: { id: "D5", label: "National Cancer Strategy 2026–2035, p. 35", url: STRATEGY_URL } },
@@ -46,7 +47,8 @@ export function countyContext(code: string) {
         (x.ind.target ? ` Strategy target ${x.ind.target}% → ${x.belowTarget ? "BELOW target" : "meets target"}.` : "") +
         ` In worst quartile ${x.persistence.worstQ} of last ${x.persistence.years} years.${t}` +
         (x.ind.noisy ? " (UNRELIABLE: small numbers, do not use as evidence of a gap.)" : "") +
-        (x.smallDiff ? " (Within ±2 percentage points of Finland: treat as no meaningful difference.)" : "")
+        (x.key === "smr" && data.mortality?.byCounty[code] ? ` 95% CI ${data.mortality.byCounty[code].lo}–${data.mortality.byCounty[code].hi} (as ratio; Finland = 1); observed ${data.mortality.byCounty[code].observed} vs expected ${data.mortality.byCounty[code].expected} deaths 2021–2025.` : "") +
+        (x.smallDiff ? " (Within normal variation of Finland: treat as no meaningful difference.)" : "")
     );
   }
   const male = sourceForIndicator("screen_colorectal_male");

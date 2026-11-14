@@ -33,4 +33,5 @@
 - **"Is 63% vs 66% survival real?"** Differences within ±2 points (±3 for counties under 100,000 people) are treated as normal variation and never scored.
 - **"Why should Päijät-Häme believe the plan?"** It starts by measuring, with the county's own data, the step we can't see. The other actions have Nordic or Finnish evidence and a county to learn from.
 - **"What does a pilot cost, and who evaluates it?"** About 0.5 FTE analyst for 3 months using existing records, with no new IT system. Evaluation by a university partner, like AstraZeneca's 2025 kidney-disease pilot (8,248 invited, 4,018 took part).
+- **"What about mortality?"** We built an age-standardised mortality ratio by county (SMR, 2021–25) with confidence intervals from Statistics Finland data. Four counties are significantly higher: Kymenlaakso +11%, Satakunta +10%, Lapland +6%, South Ostrobothnia +5%. Päijät-Häme is average, so its problem is colon cancer specifically.
 - **"Is this AI or a dashboard?"** The analytics engine finds and ranks gaps and actions; Gemini turns them into a cited board brief, with a check that ties each number to its source.

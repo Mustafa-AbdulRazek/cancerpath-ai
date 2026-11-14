@@ -244,8 +244,8 @@ export const ACTIONS: Action[] = [
     title: "Guideline-adherence audit and regional multidisciplinary team (MDT) review with the university hospital",
     stage: "outcome",
     level: "County + university hospital (YTA)",
-    triggers: ["surv_colon", "surv_breast"],
-    why: "Survival below the national level, persisting for several years, suggests differences in diagnostics or treatment practice.",
+    triggers: ["surv_colon", "surv_breast", "smr"],
+    why: "Survival below the national level, or higher age-standardised cancer mortality, suggests differences in diagnostics or treatment practice.",
     what: "Run a yearly audit of guideline adherence for colorectal and breast cancer and present every new case at a joint (remote) MDT with the university hospital.",
     first90: [
       "Pick 5 audit indicators per cancer from national/Nordic guidelines",
@@ -306,6 +306,31 @@ export const ACTIONS: Action[] = [
     evidence: [
       { label: "Syöpä 2024 report via Verkkouutiset (17.6.2026): stage recorded for 42% nationally, Pirkanmaa 72%, target ≥ 70%", url: SYOPA2024_URL },
       { label: "National Cancer Strategy p. 30 and 36: clinical cancer notifications to cover 90% automatically by 2030", url: STRATEGY_URL },
+    ],
+  },
+  {
+    id: "A13",
+    resources: "Reserved chest CT slots at the central hospital; red-flag referral criteria in primary care; ~0.2 FTE pathway coordinator",
+    learnFrom: { text: "Denmark, Norway and Sweden: 2–7 days to a primary-care appointment in the lung cancer pathway vs 14 in Finland (Khalife 2025)", url: "https://ihe.se/app/uploads/2026/04/IHE-Cancer-Dashboard-Finland_.pdf" },
+    title: "Lung cancer fast track: direct GP access to chest CT for red-flag symptoms, with target times",
+    stage: "outcome",
+    level: "County + university hospital (YTA)",
+    triggers: ["smr"],
+    why: "Cancer mortality is higher than the county's age structure predicts. Lung cancer is where Finland is furthest from the Nordic level, which is a strategy target for poor-prognosis cancers.",
+    what: "Let GPs order chest CT directly for patients with lung red-flag symptoms (e.g. persistent cough or haemoptysis in smokers), and set target times from imaging to the lung team and to treatment.",
+    first90: [
+      "Agree on red-flag criteria and direct CT referral with radiology and the lung team",
+      "Reserve weekly chest-CT slots for direct GP referrals",
+      "Track days from first contact to CT, and from CT to diagnosis",
+    ],
+    owner: "Primary care chief physician + central hospital radiology and pulmonology",
+    kpi: "≥ 90% of red-flag patients imaged within 14 days; median CT → diagnosis ≤ 14 days",
+    effort: "Medium",
+    roadmap: ["2.5.2", "3.1.2"],
+    evidence: [
+      { label: "IHE Cancer Dashboard Finland 2026: lung cancer 5-year survival men 17% vs Norway 30%; longest Nordic waits (Khalife 2025)", url: "https://ihe.se/app/uploads/2026/04/IHE-Cancer-Dashboard-Finland_.pdf" },
+      { label: "NICE NG12: suspected cancer, recognition and referral (lung cancer criteria)", url: "https://www.nice.org.uk/guidance/ng12" },
+      { label: "National Cancer Strategy p. 5: poor-prognosis cancers (incl. lung, +14 points) to reach Nordic survival", url: STRATEGY_URL },
     ],
   },
 ];

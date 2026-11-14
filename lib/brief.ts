@@ -1,4 +1,4 @@
-import { countyByCode, findingsFor, fmtU, ordinal, stageMeta, stageScores, weakestStage } from "./analysis";
+import { countyByCode, findingsFor, ordinal, phrase, stageMeta, stageScores, weakestStage } from "./analysis";
 import { actionsFor, doFirst } from "./actions";
 
 /** Deterministic county summary used on the county page, the printable brief and as the AI fallback. */
@@ -11,7 +11,7 @@ export function countySummary(code: string) {
   const inStage = clear ? usable.filter((f) => f.ind.stage === weak!.stage).sort((a, b) => a.z! - b.z!)[0] : undefined;
   const det = stageScores(code).find((s) => s.stage === "detection")?.score;
   const downstream = clear && weak!.stage === "outcome" && det != null && det >= -0.2;
-  const fact = (f?: (typeof findings)[number]) => (f ? `${f.ind.short.toLowerCase()} ${fmtU(f.value, f.ind.unit)} vs ${fmtU(f.national, f.ind.unit)} in Finland, ${ordinal(f.rank!)} of ${f.of}` : "");
+  const fact = (f?: (typeof findings)[number]) => (f ? `${phrase(f)}${f.key === "smr" ? "" : " in Finland"}, ${ordinal(f.rank!)} of ${f.of}` : "");
 
   let message: string;
   if (downstream) {

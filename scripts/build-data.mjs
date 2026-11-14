@@ -136,6 +136,93 @@ const eligibleMeta = {
   },
 };
 
+// Cancer mortality by county, indirectly age-standardised (SMR), 2021–2025 pooled.
+// Observed: StatFin 13u5 (deaths by wellbeing services county, cause 04-21 malignant neoplasms C00–C97).
+// Expected: national age-specific deaths (StatFin 11az, same cause and years) × county population share in each age band
+// (StatFin 11re, population 31.12.2023, the midpoint year). SMR = observed / expected, 95% CI = SMR × exp(±1.96/√observed).
+const SMR_YEARS = ["2021", "2022", "2023", "2024", "2025"];
+const AGE_BANDS = ["000", "1-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90-94", "95-"];
+const bandOf = (age) => {
+  if (age === 0) return "000";
+  if (age < 5) return "1-4";
+  if (age >= 95) return "95-";
+  const lo = Math.floor(age / 5) * 5;
+  return `${lo}-${lo + 4}`;
+};
+const pxPost = async (path, query) => {
+  const r = await fetch(`https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, response: { format: "json-stat2" } }),
+  });
+  if (!r.ok) throw new Error(path + " " + r.status + " " + (await r.text()).slice(0, 200));
+  return r.json();
+};
+// json-stat2 helper: iterate all cells with their category codes
+const cells = (js) => {
+  const dims = js.id.map((k) => Object.entries(js.dimension[k].category.index).sort((a, b) => a[1] - b[1]).map((e) => e[0]));
+  const out = [];
+  js.value.forEach((v, flat) => {
+    let rem = flat;
+    const codes = {};
+    for (let d = js.id.length - 1; d >= 0; d--) {
+      const size = js.size[d];
+      codes[js.id[d]] = dims[d][rem % size];
+      rem = Math.floor(rem / size);
+    }
+    out.push({ codes, v: v ?? 0 });
+  });
+  return out;
+};
+const hvaCodes = counties.map((c) => "HVA" + c.code);
+const obsJs = await pxPost("ksyyt/13u5.px", [
+  { code: "alue_23_20260101", selection: { filter: "item", values: hvaCodes } },
+  { code: "kuolinsyyt_1_20210101", selection: { filter: "item", values: ["04-21"] } },
+  { code: "timeperiod_y", selection: { filter: "item", values: SMR_YEARS } },
+  { code: "contentscode", selection: { filter: "item", values: ["ksyylkm"] } },
+]);
+const observed = {};
+for (const { codes, v } of cells(obsJs)) {
+  const code = codes.alue_23_20260101.replace("HVA", "");
+  observed[code] = (observed[code] || 0) + v;
+}
+const natJs = await pxPost("ksyyt/11az.px", [
+  { code: "kuolinsyyt_1_20210101", selection: { filter: "item", values: ["04-21"] } },
+  { code: "ikaryhma_10_20180101", selection: { filter: "item", values: AGE_BANDS } },
+  { code: "sukupuoli_9_20180101", selection: { filter: "item", values: ["SSS"] } },
+  { code: "timeperiod_y", selection: { filter: "item", values: SMR_YEARS } },
+]);
+const natDeaths = {};
+for (const { codes, v } of cells(natJs)) natDeaths[codes.ikaryhma_10_20180101] = (natDeaths[codes.ikaryhma_10_20180101] || 0) + v;
+const allAges = Array.from({ length: 100 }, (_, i) => String(i).padStart(3, "0")).concat(["100-"]);
+const popJs = await pxPost("vaerak/11re.px", [
+  { code: "alue_23_20260101", selection: { filter: "item", values: Object.keys(kuntaToCounty) } },
+  { code: "ikaryhma_10_20180101", selection: { filter: "item", values: allAges } },
+  { code: "sukupuoli_9_20180101", selection: { filter: "item", values: ["SSS"] } },
+  { code: "timeperiod_y", selection: { filter: "item", values: ["2023"] } },
+]);
+const popBand = {}; // popBand[county][band]
+const natPopBand = {};
+for (const { codes, v } of cells(popJs)) {
+  const county = kuntaToCounty[codes.alue_23_20260101];
+  const a = codes.ikaryhma_10_20180101 === "100-" ? 100 : +codes.ikaryhma_10_20180101;
+  const b = bandOf(a);
+  natPopBand[b] = (natPopBand[b] || 0) + v;
+  if (!county) continue;
+  (popBand[county] ??= {})[b] = (popBand[county][b] || 0) + v;
+}
+const mortality = { years: "2021–2025", cause: "Malignant neoplasms (C00–C97)", byCounty: {} };
+for (const c of counties) {
+  const O = observed[c.code];
+  const E = AGE_BANDS.reduce((s, b) => s + ((natDeaths[b] || 0) * (popBand[c.code]?.[b] || 0)) / (natPopBand[b] || 1), 0);
+  if (!O || !E) continue;
+  const smr = O / E;
+  const k = 1.96 / Math.sqrt(O);
+  mortality.byCounty[c.code] = { observed: O, expected: Math.round(E), smr: Math.round(smr * 1000) / 1000, lo: Math.round(smr * Math.exp(-k) * 1000) / 1000, hi: Math.round(smr * Math.exp(k) * 1000) / 1000 };
+}
+const sumO = Object.values(mortality.byCounty).reduce((s, x) => s + x.observed, 0), sumE = Object.values(mortality.byCounty).reduce((s, x) => s + x.expected, 0);
+console.log("SMR: counties", Object.keys(mortality.byCounty).length, "sum O/E", (sumO / sumE).toFixed(3), "national deaths", Object.values(natDeaths).reduce((a, b) => a + b, 0));
+
 // Boundaries (Statistics Finland, CC BY 4.0)
 const geo = await getJson(
   "https://geo.stat.fi/geoserver/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=tilastointialueet:hyvinvointialue4500k_2025&outputFormat=json&srsName=EPSG:4326"
@@ -167,6 +254,7 @@ const dataset = {
   national,
   eligible,
   eligibleMeta,
+  mortality,
   geo: { type: "FeatureCollection", features },
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

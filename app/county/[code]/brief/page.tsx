@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PrintButton from "@/components/PrintButton";
 import { learnFrom } from "@/components/ActionCard";
-import { counties, countyByCode, fmtU, ordinal } from "@/lib/analysis";
+import { counties, countyByCode, ordinal, phrase } from "@/lib/analysis";
 import { countySummary } from "@/lib/brief";
 
 export function generateStaticParams() {
@@ -38,7 +38,7 @@ export default async function BriefPage({ params }: { params: Promise<{ code: st
       <h2 className="mt-4 font-semibold">What the data shows</h2>
       <ul className="ml-5 list-disc">
         {s.gaps.length ? s.gaps.map((g) => (
-          <li key={g.key}>{g.ind.short}: {fmtU(g.value, g.ind.unit)} vs {fmtU(g.national, g.ind.unit)} in Finland ({ordinal(g.rank!)} of {g.of}, {g.year}){g.belowTarget ? ", below the 80% target" : ""}. Source: THL Sotkanet {g.ind.id}.</li>
+          <li key={g.key}>{phrase(g).charAt(0).toUpperCase() + phrase(g).slice(1)} ({ordinal(g.rank!)} of {g.of}, {g.year}){g.belowTarget ? ", below the 80% target" : ""}. Source: {g.key === "smr" ? "Statistics Finland (SMR, CancerPath calculation)" : `THL Sotkanet ${g.ind.id}`}.</li>
         )) : <li>No indicator is clearly below other counties.</li>}
       </ul>
 

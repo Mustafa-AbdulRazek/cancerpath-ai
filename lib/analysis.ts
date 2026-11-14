@@ -32,6 +32,7 @@ type Dataset = {
   national: Record<string, Record<string, number>>;
   geo: GeoJSON.FeatureCollection;
   eligible: Record<string, { breast: number; cervical: number; colorectal: number }>;
+  mortality?: { years: string; cause: string; byCounty: Record<string, { observed: number; expected: number; smr: number; lo: number; hi: number }> };
   eligibleMeta: { year: string; source: string; url: string; bands: Record<"breast" | "cervical" | "colorectal", { label: string; intervalYears: number }> };
 };
 
@@ -72,6 +73,24 @@ export const SERIES_NOTES: Record<string, string> = {
   phc_wait7: "County values swing strongly year to year (e.g. North Karelia 21% → 59%, 2024→2025). THL linked the 2023 slowdown to IT and administrative changes after the county reform, monitoring coverage grew from 15 to 21 of 22 counties in 2021–2023, and the legal care guarantee was relaxed. We therefore use a rolling 3-year average.",
   spec_wait6m: "Large jumps around 2022 (e.g. North Karelia 8.1 → 43.2), when wellbeing services counties took over, may partly reflect changes in recording. Compare levels across counties; read trends with care.",
 };
+/**
+ * Cancer mortality as a scored outcome indicator: indirectly age-standardised mortality ratio (SMR) × 100, Finland = 100,
+ * 2021–2025 pooled (Statistics Finland 13u5 + 11az + 11re). Stored under year 2025 so it ranks like the other indicators.
+ */
+export const SMR_URL = "https://pxdata.stat.fi/PxWeb/pxweb/en/StatFin/StatFin__ksyyt/statfin_ksyyt_pxt_13u5.px/";
+if (data.mortality && !data.values.smr) {
+  data.values.smr = {};
+  for (const [code, m] of Object.entries(data.mortality.byCounty)) data.values.smr[code] = { 2025: Math.round(m.smr * 1000) / 10 };
+  data.national.smr = { 2025: 100 };
+  data.indicators.push({
+    id: 13, key: "smr", stage: "outcome", label: "Cancer mortality, age-standardised ratio (SMR × 100, Finland = 100), 2021–2025", short: "Cancer mortality (SMR)",
+    unit: "index", better: "lower", gender: "total",
+    titleFi: "Kuolleet syöpään (C00–C97), epäsuorasti ikävakioitu kuolleisuussuhde 2021–2025", titleEn: null,
+    descriptionFi: "Observed cancer deaths divided by the deaths expected with Finland's age-specific death rates. 95% CI = SMR × exp(±1.96/√observed).",
+    organization: "Statistics Finland (CancerPath AI calculation)", dataUpdated: null, url: SMR_URL, api: SMR_URL,
+  } as never);
+}
+
 export const counties = [...data.counties].sort((a, b) => a.short.localeCompare(b.short, "fi"));
 export const indicators = data.indicators;
 export const scoredIndicators = indicators.filter((i) => i.stage !== "context");
@@ -203,7 +222,8 @@ export function findingsFor(code: string): IndicatorFinding[] {
     // Survival: differences within ±2 pp of Finland are likely within statistical noise for most counties.
     // ±2 pp band; ±3 pp for counties under 100,000 people (few cases per year → wider uncertainty, no CIs published).
     const pop = data.values.population?.[code]?.[latestYear("population")] ?? 1e9;
-    const smallDiff = ind.stage === "outcome" && v != null && nat != null && Math.abs(v - nat) <= (pop < 100000 ? 3 : 2);
+    const m = ind.key === "smr" ? data.mortality?.byCounty[code] : undefined;
+    const smallDiff = ind.key === "smr" ? !!m && m.lo <= 1 && m.hi >= 1 : ind.stage === "outcome" && v != null && nat != null && Math.abs(v - nat) <= (pop < 100000 ? 3 : 2);
     if (z != null && z <= -1 && (p.worstQ >= 3 || p.years < 3) && !ind.noisy && !smallDiff) signal = "strong";
     else if (z != null && z <= -0.5) signal = "moderate";
     const earlyWarning = !!t && !t.improving && Math.abs(t.delta) >= (ind.unit.startsWith("%") ? 5 : ind.key === "spec_wait6m" ? 15 : 9999);
@@ -321,4 +341,13 @@ export function cancersPerYear(code: string) {
   const nat = nationalValue("population", y);
   if (!pop || !nat) return undefined;
   return Math.round((38000 * pop) / nat / 10) * 10;
+}
+
+/** Plain-language comparison of a finding with Finland, e.g. "cancer mortality 11% above what its age structure predicts". */
+export function phrase(f: { key: string; value?: number; national?: number; ind: IndicatorMeta }) {
+  if (f.key === "smr" && f.value != null) {
+    const d = Math.round(f.value - 100);
+    return `cancer mortality ${Math.abs(d)}% ${d >= 0 ? "above" : "below"} what its age structure predicts`;
+  }
+  return `${f.ind.short.toLowerCase()} ${fmtU(f.value, f.ind.unit)} vs ${fmtU(f.national, f.ind.unit)}`;
 }

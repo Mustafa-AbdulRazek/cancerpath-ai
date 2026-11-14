@@ -4,7 +4,7 @@ import MapExplorer, { MapMode } from "@/components/MapExplorer";
 import Scatter from "@/components/Scatter";
 import { Section, SourceBadge, Sparkline } from "@/components/ui";
 import {
-  counties, countyCorrelation, countyCorrelationExcluding, data, findingsFor, fmt, fmtU, indicatorByKey, latestYear,
+  counties, countyByCode, countyCorrelation, phrase, countyCorrelationExcluding, data, findingsFor, fmt, fmtU, indicatorByKey, latestYear,
   nationalSeries, nationalValue, ordinal, overallScore, rank, scoredIndicators, series, stageMeta, stageRank, STAGES, UUSIMAA_HUS, value,
   weakestStage, zScore,
 } from "@/lib/analysis";
@@ -25,6 +25,7 @@ export default function Home() {
   const fiColon = nationalSeries("surv_colon").filter((p) => p.year >= ph[0].year);
   const eq = countyCorrelation("screen_breast", "foreign_pct");
   const eqEx = countyCorrelationExcluding("screen_breast", "foreign_pct", UUSIMAA_HUS);
+  const smrHigh = Object.entries(data.mortality?.byCounty ?? {}).filter(([, m]) => m.lo > 1).sort((a, b) => b[1].smr - a[1].smr).map(([c, m]) => `${countyByCode[c].short} +${Math.round((m.smr - 1) * 100)}%`);
   const noReferral = new Set(counties.filter((c) => value("spec_wait6m", c.code) == null).map((c) => c.code));
 
   const ranked = counties
@@ -108,7 +109,7 @@ export default function Home() {
                         <>
                           <span style={{ color: stageMeta(weak!.stage).color }} className="font-medium">{stageMeta(weak!.stage).label}</span>
                           {sr?.rank ? ` (${ordinal(sr.rank)} of ${sr.of})` : ""}
-                          {top && top.z! < -0.5 ? ` · ${top.ind.short} ${fmtU(top.value, top.ind.unit)} vs ${fmtU(top.national, top.ind.unit)}` : ""}
+                          {top && top.z! < -0.5 ? ` · ${phrase(top)}` : ""}
                         </>
                       ) : (
                         "No clear gap"
@@ -165,7 +166,7 @@ export default function Home() {
             <table className="mt-2 w-full text-sm">
               <tbody className="divide-y divide-[var(--line)]">
                 <tr><td className="py-2 pr-3">Survival at the Nordic level</td><td className="py-2 pr-3 text-[var(--muted)]">Colon 5-year survival: Finland {fmt(nationalValue("surv_colon"))}%, counties {fmt(colon.worst?.[1])}–{fmt(colon.best?.[1])}%</td><td className="py-2 font-medium text-[var(--better)]">Measured</td></tr>
-                <tr><td className="py-2 pr-3">Cancer mortality −10%</td><td className="py-2 pr-3 text-[var(--muted)]">About 13,300 deaths a year (strategy p. 5); not in the open indicator API by county</td><td className="py-2 font-medium text-[var(--muted)]">National only</td></tr>
+                <tr><td className="py-2 pr-3">Cancer mortality −10%</td><td className="py-2 pr-3 text-[var(--muted)]">About 13,300 deaths a year. Age-standardised by county (SMR, 2021–25): {smrHigh.length} counties significantly higher than their age structure predicts ({smrHigh.join(", ")})</td><td className="py-2 font-medium text-[var(--better)]">Measured</td></tr>
                 <tr><td className="py-2 pr-3">Treatment within target times</td><td className="py-2 pr-3 text-[var(--muted)]">Only a national count over the 180-day limit; no county or cancer-type data (action A7)</td><td className="py-2 font-medium text-[var(--worse)]">Not measured</td></tr>
                 <tr><td className="py-2 pr-3">Stage recorded at diagnosis</td><td className="py-2 pr-3 text-[var(--muted)]">42% nationally, Pirkanmaa 72%, target 70% (action A12)</td><td className="py-2 font-medium text-[var(--worse)]">Uneven</td></tr>
               </tbody>
@@ -179,6 +180,25 @@ export default function Home() {
               Across all 22 areas the link is strong (r = {eq.r.toFixed(2)}), but it is mostly a capital-region pattern: without Uusimaa and Helsinki it is r = {eqEx.r.toFixed(2)}. The individual-level figures above confirm the gap. {FACTS.screenRegions.text}, which matches this data. <SourceBadge href={FACTS.screenRegions.url} label="Syöpäjärjestöt 2026" />
             </p>
           </div>
+        </div>
+      </Section>
+
+      <Section title="Where Finland is furthest from the Nordic level: lung cancer">
+        <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
+          <div className="space-y-2 text-sm">
+            <p>{FACTS.nordic.text}.</p>
+            <p>{FACTS.lungWait.text}.</p>
+            <p className="text-[var(--muted)]">The strategy's Goal 3 targets Nordic-level survival for poor-prognosis cancers, including +14 points for lung cancer. Counties with significantly higher cancer mortality get action A13: direct GP access to chest CT for red-flag symptoms, with target times.</p>
+            <p className="text-xs text-[var(--muted)]"><SourceBadge href={FACTS.nordic.url} label="IHE 2026 (NORDCAN, Khalife 2025)" />, <SourceBadge href={STRATEGY_URL} label="Strategy p. 5" /></p>
+          </div>
+          <table className="w-full self-start text-sm">
+            <thead><tr className="border-b border-[var(--line)] text-left text-xs text-[var(--muted)]"><th className="py-1">Lung cancer 5-year survival</th><th className="text-right">Finland</th><th className="text-right">Norway</th></tr></thead>
+            <tbody className="divide-y divide-[var(--line)]">
+              <tr><td className="py-2">Men</td><td className="text-right font-medium text-[var(--worse)]">17%</td><td className="text-right">30%</td></tr>
+              <tr><td className="py-2">Women</td><td className="text-right font-medium text-[var(--worse)]">29%</td><td className="text-right">37%</td></tr>
+              <tr><td className="py-2">Days to primary-care appointment (lung pathway)</td><td className="text-right font-medium text-[var(--worse)]">14</td><td className="text-right">2–7</td></tr>
+            </tbody>
+          </table>
         </div>
       </Section>
 

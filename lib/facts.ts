@@ -10,6 +10,8 @@ export const AZ_CKD_URL = "https://www.mynewsdesk.com/fi/astrazeneca/pressreleas
 export const JARVELIN_URL = "https://www.laakarilehti.fi/tieteessa/alkuperaistutkimukset/kohti-luotettavaa-syovan-hoitoon-paasyn-seurantaa-hilmon-ja-syoparekisterin-diagnoositietojen-vertailu/";
 
 export const FACTS = {
+  nordic: { text: "Finland has the lowest 5-year survival for all cancers in the Nordic countries (men 69%, women 73%). Lung cancer 5-year survival is 17% for men vs 30% in Norway, and 29% for women vs 37%", source: "IHE Cancer Dashboard Finland 2026 (NORDCAN)", url: IHE_URL },
+  lungWait: { text: "In a 2025 Nordic study of lung cancer pathways, getting a primary-care appointment took 14 days in Finland vs 2–7 days in Denmark, Norway and Sweden", source: "Khalife et al. 2025, via IHE 2026", url: IHE_URL },
   survey: { text: "A third of cancer patients needed at least three healthcare contacts before diagnosis (684 respondents)", source: "Suomen Syöpäpotilaat survey, 12 Mar 2025", url: SURVEY_URL },
   waits180: { text: "Nationally, about 600–700 cancer patients (under 2%) exceeded the 180-day treatment limit in 2024; some counties publish waiting statistics, but for all cancers together", source: "IHE Cancer Dashboard Finland 2026", url: IHE_URL },
   stage: { text: "Stage at diagnosis is recorded for 42% of new cancers nationally; Pirkanmaa 72%, most other areas 33–42%; target at least 70%", source: "Finnish Cancer Registry, Syöpä 2024 (via Verkkouutiset, 17 Jun 2026)", url: STAGE_URL },
