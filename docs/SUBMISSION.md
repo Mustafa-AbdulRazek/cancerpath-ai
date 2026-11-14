@@ -21,11 +21,12 @@ Finland's National Cancer Strategy 2026–2035 sets Goal 3: *equal and effective
 3. **Diagnosis → Treatment:** no public data. We show this blind spot and how to close it.
 4. **Outcome:** 5-year relative survival (colon, breast, cervical)
 
-For each county it finds **the stage where the gap emerges**. It separates **robust gaps** (persistently in the worst quartile) from noise, and flags **early warnings** (fast deterioration).
+Goal 3 means equal outcomes, so we start from unequal **survival** and trace it back to the pathway stage where the gap is likely created. It separates **robust gaps** (persistently in the worst quartile) from noise, and flags **early warnings** (fast deterioration).
 
 ## Insights it reveals (all sourced)
+- **Survival first:** Päijät-Häme has Finland's **fastest GP access** yet the **lowest colon cancer survival (70% → 63%, 2019→2024)**, while Vantaa–Kerava has the slowest GP access but top-3 survival. GP access alone does not explain survival: the gap is likely created downstream, in diagnosis and treatment, the stage nobody measures. (Survival is a period estimate; we present it as a sustained decline to explain.)
 - More than half of non-urgent GP visits now wait > 7 days (**38.3% → 54.7%**, 2021→2025). Part of this reflects the relaxed legal care guarantee, which we flag transparently.
-- People waiting > 6 months for specialist care (all specialties, a congestion proxy): **99 per 10,000 in North Karelia vs 1.4 in Helsinki** (2025).
+- People waiting > 6 months for specialist care (all specialties, a congestion proxy): **99 per 10,000 in North Karelia vs 36 for Finland** (2025). HUS-area data is incomplete, so Helsinki is excluded and those areas are hatched on the map.
 - **Equity:** breast screening participation is strongly lower where the share of foreign citizens is higher (**r = −0.81**, 22 areas), so the screening gap sits in diverse urban areas.
 - Colorectal screening is below 80% in **all 22 areas**, and cervical screening in 20 of 22. Men participate in colorectal screening far less than women (**69.2% vs 77.7%**).
 - Colon cancer 5-year survival ranges from **63% to 74%** between counties.

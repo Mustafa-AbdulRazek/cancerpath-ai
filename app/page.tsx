@@ -1,8 +1,8 @@
 import Link from "next/link";
 import MapExplorer, { MapMode } from "@/components/MapExplorer";
-import { Card, Chip, SourceBadge } from "@/components/ui";
+import { Card, Chip, SourceBadge, Sparkline } from "@/components/ui";
 import {
-  counties, data, findingsFor, fmt, fmtU, indicatorByKey, latestYear, nationalSeries, nationalValue, overallScore, rank,
+  counties, countyByCode, data, findingsFor, fmt, fmtU, indicatorByKey, latestYear, nationalValue, overallScore, rank, series,
   scoredIndicators, stageMeta, STAGES, value, weakestStage, zScore,
 } from "@/lib/analysis";
 import { STRATEGY_URL, THL_2016_URL } from "@/lib/actions";
@@ -12,34 +12,43 @@ import { countyCorrelation, EQUITY_PAIRS } from "@/lib/analysis";
 const zColor = (z?: number) => (z == null ? "#f1f5f9" : z <= -1 ? "#dc2626" : z <= -0.5 ? "#fca5a5" : z < 0.5 ? "#e2e8f0" : z < 1 ? "#5eead4" : "#0f766e");
 
 function headline() {
-  const gp = nationalSeries("phc_wait7");
-  const gpFirst = gp[0], gpLast = gp[gp.length - 1];
+  // The paradox: county with the best GP access vs its colon cancer survival
+  const yG = latestYear("phc_wait7"), yS = latestYear("surv_colon");
+  const gpRank = Object.entries(data.values.phc_wait7).map(([c, s]) => [c, s[yG]] as const).filter(([, v]) => v != null).sort((a, b) => a[1] - b[1]);
+  const bestGp = gpRank[0], worstGp = gpRank[gpRank.length - 1];
+  const pCode = bestGp[0];
+  const pSurv = series("surv_colon", pCode);
+  const pRank = rank("surv_colon", pCode, yS);
+  const wSurv = value("surv_colon", worstGp[0], yS);
+  const wRank = rank("surv_colon", worstGp[0], yS);
+  // Referral congestion
   const yW = latestYear("spec_wait6m");
-  const w = rank("spec_wait6m", "90", yW);
+  const w = rank("spec_wait6m", "14", yW);
   const scr = ["screen_cervical", "screen_colorectal", "screen_breast"].map((k) => {
     const y = latestYear(k);
     const below = counties.filter((c) => (value(k, c.code, y) ?? 100) < 80).length;
     return { k, y, below, n: counties.length, nat: nationalValue(k, y) };
   });
-  const men = nationalValue("screen_colorectal_male"), women = nationalValue("screen_colorectal_female");
-  return { gpFirst, gpLast, yW, worstW: w.worst, bestW: w.best, scr, men, women };
+  const eq = countyCorrelation("screen_breast", "foreign_pct");
+  return { yG, yS, bestGp, worstGp, pCode, pSurv, pRank, wSurv, wRank, yW, worstW: w.worst, natW: nationalValue("spec_wait6m", yW), scr, eq };
 }
 
 export default function Home() {
   const h = headline();
   const ranked = counties.map((c) => ({ c, score: overallScore(c.code), weak: weakestStage(c.code) })).sort((a, b) => a.score - b.score);
+  const noReferral = new Set(counties.filter((c) => value("spec_wait6m", c.code) == null).map((c) => c.code));
 
   const modes: MapMode[] = [
     {
       key: "weakest",
       label: "Where the pathway falls furthest behind (weakest stage)",
-      legend: [...STAGES.filter((s) => s.key !== "treatment").map((s) => ({ color: s.color, label: s.label })), { color: "#cbd5e1", label: "No clear gap" }],
-      note: "Stage score = mean direction-adjusted z-score of the stage's indicators vs other counties. 'No clear gap' = weakest stage within 0.35 SD of the county average.",
+      legend: [...STAGES.filter((s) => s.key !== "treatment").map((s) => ({ color: s.color, label: s.label })), { color: "#cbd5e1", label: "No clear gap" }, { color: "url(#hatch)", label: "Referral stage not measurable" }],
+      note: "Stage score = mean direction-adjusted z-score of the stage's indicators vs other counties. Hatched = specialist-waiting data missing or incomplete (HUS area), so the weakest stage is chosen from fewer stages.",
       datum: Object.fromEntries(
         counties.map((c) => {
           const w = weakestStage(c.code);
           const clear = w && w.score < -0.35;
-          return [c.code, { code: c.code, name: c.name, fill: clear ? stageMeta(w!.stage).color : "#cbd5e1", label: clear ? `Weakest stage: ${stageMeta(w!.stage).label}` : "No clear gap vs other counties", sub: w ? `stage score ${w.score.toFixed(2)}` : undefined }];
+          return [c.code, { code: c.code, name: c.name, hatch: noReferral.has(c.code), fill: clear ? stageMeta(w!.stage).color : "#cbd5e1", label: clear ? `Weakest measured stage: ${stageMeta(w!.stage).label}` : "No clear gap vs other counties", sub: noReferral.has(c.code) ? "Referral stage not measurable (incomplete data)" : w ? `stage score ${w.score.toFixed(2)}` : undefined }];
         })
       ),
     },
@@ -50,20 +59,21 @@ export default function Home() {
         label: `${ind.short} (${y})`,
         legend: [
           { color: "#dc2626", label: "Much worse" }, { color: "#fca5a5", label: "Worse" }, { color: "#e2e8f0", label: "Average" },
-          { color: "#5eead4", label: "Better" }, { color: "#0f766e", label: "Much better" }, { color: "#f1f5f9", label: "No data" },
+          { color: "#5eead4", label: "Better" }, { color: "#0f766e", label: "Much better" }, { color: "url(#hatch)", label: "No / incomplete data" },
         ],
         note: `${ind.label}. Finland ${fmt(nationalValue(ind.key, y))} ${ind.unit}. Source: THL Sotkanet ${ind.id}.`,
         datum: Object.fromEntries(
           counties.map((c) => {
             const v = value(ind.key, c.code, y);
-            return [c.code, { code: c.code, name: c.name, fill: zColor(zScore(ind.key, c.code, y)), label: `${ind.short}: ${fmt(v)} ${v == null ? "" : ind.unit}`, sub: `Finland ${fmt(nationalValue(ind.key, y))}` }];
+            return [c.code, { code: c.code, name: c.name, hatch: v == null, fill: zColor(zScore(ind.key, c.code, y)), label: `${ind.short}: ${v == null ? "no / incomplete data" : fmtU(v, ind.unit)}`, sub: `Finland ${fmt(nationalValue(ind.key, y))}` }];
           })
         ),
       } as MapMode;
     }),
   ];
 
-  const gpInd = indicatorByKey["phc_wait7"], wInd = indicatorByKey["spec_wait6m"];
+  const wInd = indicatorByKey["spec_wait6m"], sInd = indicatorByKey["surv_colon"], gInd = indicatorByKey["phc_wait7"];
+  const pName = countyByCode[h.pCode].name;
   return (
     <div className="space-y-6">
       <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
@@ -71,7 +81,7 @@ export default function Home() {
           <p className="text-sm font-semibold uppercase tracking-wide text-sky-700">National Cancer Strategy 2026–2035 · Goal 3: equal and effective cancer care</p>
           <h1 className="mt-1 text-3xl font-bold leading-tight md:text-4xl">Where does each Finnish county lose ground on the cancer pathway, and what should it do on Monday?</h1>
           <p className="mt-3 text-slate-600">
-            CancerPath AI combines public THL and Cancer Registry indicators for all 22 wellbeing services areas. It finds the stage where each county's pathway falls behind (detection, referral, diagnosis → treatment, outcome) and turns it into a 90-day action plan linked to the national implementation roadmap.
+            Goal 3 means <b>equal outcomes</b>. CancerPath AI starts from unequal cancer survival and traces it back to the pathway step where the gap is likely created (detection, referral, diagnosis → treatment). It then turns that gap into a 90-day action plan linked to the national implementation roadmap, for all 22 wellbeing services areas.
           </p>
         </div>
         <Card className="border-violet-200 bg-violet-50">
@@ -88,32 +98,68 @@ export default function Home() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <Chip color={stageMeta("detection").color}>Detection</Chip>
-          <div className="mt-2 text-3xl font-bold">{fmt(h.gpFirst.value)}% → {fmt(h.gpLast.value)}%</div>
-          <div className="text-sm text-slate-600">of non-urgent GP visits waited over 7 days, Finland {h.gpFirst.year}→{h.gpLast.year}. More than half now wait over a week: the first step of detection. <span className="text-amber-700">Note: the legal care-guarantee limit was relaxed in 2023–2025, which affects this trend.</span></div>
-          <div className="mt-2"><SourceBadge href={gpInd.url} label={`Sotkanet ${gpInd.id}`} /></div>
+        <Card className="border-teal-200 md:col-span-1">
+          <Chip color={stageMeta("outcome").color}>Outcome → look downstream</Chip>
+          <div className="mt-2 text-lg font-bold leading-snug">
+            {pName} has Finland&apos;s fastest GP access, and its lowest colon cancer survival
+          </div>
+          <div className="mt-2 flex items-center gap-3">
+            <Sparkline a={h.pSurv} better="higher" width={140} height={40} />
+            <div className="text-sm">
+              <div><b>{fmt(h.pSurv[0]?.value)}% → {fmt(h.pSurv[h.pSurv.length - 1]?.value)}%</b> colon 5-yr survival</div>
+              <div className="text-slate-500">{h.pSurv[0]?.year}–{h.pSurv[h.pSurv.length - 1]?.year} · rank {h.pRank.rank}/{h.pRank.of} · GP waits &gt; 7 d: {fmt(h.bestGp[1])}% (rank 1)</div>
+            </div>
+          </div>
+          <p className="mt-2 text-sm text-slate-600">
+            Meanwhile {countyByCode[h.worstGp[0]].name} has the slowest GP access ({fmt(h.worstGp[1])}%) but colon survival of {fmt(h.wSurv)}% (rank {h.wRank.rank}). GP access alone does not explain survival, so the question moves <b>downstream</b>: diagnostics and treatment, the stage nobody measures.
+          </p>
+          <p className="mt-1 text-xs text-amber-700">Caveat: survival is a period estimate over overlapping windows (patients diagnosed up to 10 years earlier). Read it as a sustained decline to explain, not as proof of cause.</p>
+          <div className="mt-2 flex gap-1"><SourceBadge href={sInd.url} label={`Sotkanet ${sInd.id}`} /><SourceBadge href={gInd.url} label={`Sotkanet ${gInd.id}`} /><Link href={`/county/${h.pCode}`} className="text-xs font-semibold text-sky-700 hover:underline">Open {countyByCode[h.pCode].short} →</Link></div>
         </Card>
         <Card>
-          <Chip color={stageMeta("referral").color}>Referral</Chip>
-          <div className="mt-2 text-3xl font-bold">{fmt(h.worstW?.[1])} vs {fmt(h.bestW?.[1])}</div>
+          <Chip color={stageMeta("detection").color}>Equity: who is missed</Chip>
+          <div className="mt-2 text-3xl font-bold">r = {h.eq.r.toFixed(2)}</div>
           <div className="text-sm text-slate-600">
-            people per 10,000 waited over 6 months for specialist care ({h.yW}): {h.worstW ? data.counties.find((c) => c.code === h.worstW![0])?.name : ""} vs {h.bestW ? data.counties.find((c) => c.code === h.bestW![0])?.name : ""}. An all-specialty proxy for system congestion: a cancer suspicion must not join this queue.
+            Breast screening participation vs share of foreign citizens across {h.eq.n} areas. The screening gap sits in diverse urban areas. Colorectal screening is below the 80% target in {h.scr[1].below}/{h.scr[1].n} areas and cervical in {h.scr[0].below}/{h.scr[0].n}.
           </div>
+          <p className="mt-1 text-xs text-slate-500">Ecological (county-level) correlation: a signal to investigate, not an individual-level cause.</p>
+          <div className="mt-2 flex gap-1"><SourceBadge href={indicatorByKey.screen_breast.url} label="Sotkanet 3621" /><SourceBadge href={indicatorByKey.foreign_pct.url} label="Sotkanet 3074" /></div>
+        </Card>
+        <Card>
+          <Chip color={stageMeta("referral").color}>Referral congestion</Chip>
+          <div className="mt-2 text-3xl font-bold">{fmt(h.worstW?.[1])} vs {fmt(h.natW)}</div>
+          <div className="text-sm text-slate-600">
+            people per 10,000 waited over 6 months for specialist care ({h.yW}): {h.worstW ? countyByCode[h.worstW[0]]?.name : ""} vs Finland. An all-specialty proxy for congestion: a cancer suspicion must not join this queue.
+          </div>
+          <p className="mt-1 text-xs text-amber-700">HUS-area data is missing or incomplete (Helsinki excluded). Jumps around 2022 may partly reflect recording changes.</p>
           <div className="mt-2"><SourceBadge href={wInd.url} label={`Sotkanet ${wInd.id}`} /></div>
         </Card>
+      </section>
+
+      <section>
         <Card>
-          <Chip color={stageMeta("detection").color}>Screening target 80%</Chip>
-          <div className="mt-2 space-y-0.5 text-sm">
-            {h.scr.map((s) => (
-              <div key={s.k} className="flex justify-between">
-                <span>{indicatorByKey[s.k].short}</span>
-                <span className="font-semibold">{s.below}/{s.n} counties below · FI {fmt(s.nat)}%</span>
-              </div>
-            ))}
-            <div className="pt-1 text-slate-600">Colorectal: men {fmt(h.men)}% vs women {fmt(h.women)}%.</div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-bold">Equity lens: who is being missed?</h2>
+            <span className="text-xs text-slate-500">Ecological county-level correlations (n = 22): signals to investigate, not individual-level causes</span>
           </div>
-          <div className="mt-2 flex gap-1"><SourceBadge href={indicatorByKey.screen_cervical.url} label="Sotkanet 3620/3621/6103" /><SourceBadge href={STRATEGY_URL} label="Target: strategy p.5" /></div>
+          <div className="mt-3 grid gap-6 md:grid-cols-[1fr_380px]">
+            <div className="space-y-3">
+              {EQUITY_PAIRS.map((e) => {
+                const c = countyCorrelation(e.a, e.b);
+                return (
+                  <div key={e.a + e.b} className="rounded-lg bg-slate-50 p-3">
+                    <div className="text-sm font-semibold">{e.text}</div>
+                    <div className="text-sm text-slate-600">Correlation r = <b>{c.r.toFixed(2)}</b> across {c.n} areas ({indicatorByKey[e.a].short} {c.yearA} vs {indicatorByKey[e.b].short} {c.yearB}).</div>
+                    <div className="mt-1 flex gap-1"><SourceBadge href={indicatorByKey[e.a].url} label={`Sotkanet ${indicatorByKey[e.a].id}`} /><SourceBadge href={indicatorByKey[e.b].url} label={`Sotkanet ${indicatorByKey[e.b].id}`} /></div>
+                  </div>
+                );
+              })}
+              <p className="text-sm text-slate-700"><b>So what:</b> the screening gap is concentrated in diverse urban areas (Helsinki, Vantaa–Kerava, West Uusimaa). Multilingual invitations, community outreach and easy rebooking (actions A2, A3) target exactly this group. The strategy's equality goal asks for regional <i>and</i> socioeconomic differences to steer services.</p>
+            </div>
+            <div>
+              {(() => { const c = countyCorrelation("screen_breast", "foreign_pct"); return <Scatter pts={c.pts} xLabel={`Foreign citizens, % (${c.yearB})`} yLabel={`Breast screening, % (${c.yearA})`} />; })()}
+            </div>
+          </div>
         </Card>
       </section>
 
@@ -147,32 +193,6 @@ export default function Home() {
         </Card>
       </section>
 
-      <section>
-        <Card>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-bold">Equity lens: who is being missed?</h2>
-            <span className="text-xs text-slate-500">Ecological county-level correlations (n = 22): signals to investigate, not individual-level causes</span>
-          </div>
-          <div className="mt-3 grid gap-6 md:grid-cols-[1fr_380px]">
-            <div className="space-y-3">
-              {EQUITY_PAIRS.map((e) => {
-                const c = countyCorrelation(e.a, e.b);
-                return (
-                  <div key={e.a + e.b} className="rounded-lg bg-slate-50 p-3">
-                    <div className="text-sm font-semibold">{e.text}</div>
-                    <div className="text-sm text-slate-600">Correlation r = <b>{c.r.toFixed(2)}</b> across {c.n} areas ({indicatorByKey[e.a].short} {c.yearA} vs {indicatorByKey[e.b].short} {c.yearB}).</div>
-                    <div className="mt-1 flex gap-1"><SourceBadge href={indicatorByKey[e.a].url} label={`Sotkanet ${indicatorByKey[e.a].id}`} /><SourceBadge href={indicatorByKey[e.b].url} label={`Sotkanet ${indicatorByKey[e.b].id}`} /></div>
-                  </div>
-                );
-              })}
-              <p className="text-sm text-slate-700"><b>So what:</b> the screening gap is concentrated in diverse urban areas (Helsinki, Vantaa–Kerava, West Uusimaa). Multilingual invitations, community outreach and easy rebooking (actions A2, A3) target exactly this group. The strategy's equality goal asks for regional <i>and</i> socioeconomic differences to steer services.</p>
-            </div>
-            <div>
-              {(() => { const c = countyCorrelation("screen_breast", "foreign_pct"); return <Scatter pts={c.pts} xLabel={`Foreign citizens, % (${c.yearB})`} yLabel={`Breast screening, % (${c.yearA})`} />; })()}
-            </div>
-          </div>
-        </Card>
-      </section>
 
       <section>
         <Card>

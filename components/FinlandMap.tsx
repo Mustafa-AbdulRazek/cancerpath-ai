@@ -3,7 +3,7 @@ import { geoPath, geoTransverseMercator } from "d3-geo";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-export type MapDatum = { code: string; name: string; fill: string; label: string; sub?: string };
+export type MapDatum = { code: string; name: string; fill: string; label: string; sub?: string; hatch?: boolean };
 
 export default function FinlandMap({ geo: geoIn, datum, selected, height = 560 }: { geo: GeoJSON.FeatureCollection; datum: Record<string, MapDatum>; selected?: string; height?: number }) {
   const width = Math.round(height * 0.62);
@@ -18,6 +18,12 @@ export default function FinlandMap({ geo: geoIn, datum, selected, height = 560 }
   return (
     <div className="relative">
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto max-h-[70vh]" role="img" aria-label="Map of Finland's wellbeing services counties">
+        <defs>
+          <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="transparent" />
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#475569" strokeWidth="1.6" strokeOpacity="0.55" />
+          </pattern>
+        </defs>
         {paths.map(({ code, d }) => (
           <Link key={code} href={`/county/${code}`}>
             <path
@@ -31,6 +37,7 @@ export default function FinlandMap({ geo: geoIn, datum, selected, height = 560 }
             >
               <title>{datum[code] ? `${datum[code].name}: ${datum[code].label}` : code}</title>
             </path>
+            {datum[code]?.hatch && <path d={d} fill="url(#hatch)" pointerEvents="none" />}
           </Link>
         ))}
       </svg>

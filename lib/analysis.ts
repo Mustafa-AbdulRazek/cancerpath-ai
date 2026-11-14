@@ -34,6 +34,21 @@ type Dataset = {
 };
 
 export const data = raw as unknown as Dataset;
+
+/**
+ * Data-quality exclusions. Helsinki reports ~0 people waiting > 6 months every year (0.1, 0, 0.1 …) with gaps,
+ * and the other HUS-area counties report nothing. That pattern points to incomplete HUS reporting, not near-zero waits,
+ * so the series is excluded from scoring and ranking and shown as "incomplete reporting".
+ */
+export const EXCLUDED: Record<string, Record<string, string>> = {
+  spec_wait6m: { "90": "Helsinki reports ~0 every year with gaps (2022–2024 missing), and other HUS-area counties report nothing: likely incomplete HUS reporting, so excluded." },
+};
+for (const [key, codes] of Object.entries(EXCLUDED)) for (const code of Object.keys(codes)) delete data.values[key]?.[code];
+
+/** Known breaks in series that limit trend interpretation. */
+export const SERIES_NOTES: Record<string, string> = {
+  spec_wait6m: "Large jumps around 2022 (e.g. North Karelia 8.1 → 43.2), when wellbeing services counties took over, may partly reflect changes in recording. Compare levels across counties; read trends with care.",
+};
 export const counties = [...data.counties].sort((a, b) => a.short.localeCompare(b.short, "fi"));
 export const indicators = data.indicators;
 export const scoredIndicators = indicators.filter((i) => i.stage !== "context");

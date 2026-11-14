@@ -19,7 +19,11 @@ export default function MapExplorer({ geo, modes }: { geo: GeoJSON.FeatureCollec
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
         {m.legend.map((l) => (
           <span key={l.label} className="inline-flex items-center gap-1">
-            <span className="inline-block h-3 w-3 rounded-sm" style={{ background: l.color }} />
+            {l.color.startsWith("url(") ? (
+              <svg width="12" height="12" aria-hidden><defs><pattern id="hatch-legend" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="#475569" strokeWidth="1.4" /></pattern></defs><rect width="12" height="12" rx="2" fill="#e2e8f0" /><rect width="12" height="12" rx="2" fill="url(#hatch-legend)" /></svg>
+            ) : (
+              <span className="inline-block h-3 w-3 rounded-sm" style={{ background: l.color }} />
+            )}
             {l.label}
           </span>
         ))}

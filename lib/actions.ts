@@ -1,4 +1,4 @@
-import { findingsFor, IndicatorFinding, Stage } from "./analysis";
+import { findingsFor, IndicatorFinding, Stage, stageScores, weakestStage } from "./analysis";
 
 export type Evidence = { label: string; url: string; note?: string };
 export type Action = {
@@ -285,7 +285,17 @@ export function actionsFor(code: string, limit = 4): MatchedAction[] {
     );
     out.push({ ...a, score, matchedOn: matched });
   }
+  // Downstream pattern: outcome is the weakest stage while detection is on par, so the gap is likely created in
+  // diagnosis/treatment. Prioritise measuring time-to-treatment and downstream actions over screening actions.
+  const weak = weakestStage(code);
+  const det = stageScores(code).find((s) => s.stage === "detection")?.score;
+  const downstream = !!weak && weak.score < -0.35 && weak.stage === "outcome" && det != null && det >= -0.2;
+  if (downstream) for (const x of out) x.score += x.id === "A7" ? 3 : x.stage === "outcome" || x.stage === "treatment" || x.id === "A6" ? 1 : 0;
   out.sort((a, b) => b.score - a.score);
+  if (downstream) {
+    const top = out.slice(0, limit);
+    return top.some((x) => x.id === "A7") ? top : [...top.slice(0, limit - 1), out.find((x) => x.id === "A7")!];
+  }
   // Always keep the measurement action (A7) in the plan: Goal 3 "treatment within target times" cannot be monitored without it.
   const gapActions = out.filter((x) => x.id !== "A7").slice(0, limit - 1);
   const a7 = out.find((x) => x.id === "A7")!;

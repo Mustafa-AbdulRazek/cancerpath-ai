@@ -45,3 +45,6 @@ next-env.d.ts
 /data/raw/
 
 .vercel
+
+# personal team notes
+/arabic-guide/

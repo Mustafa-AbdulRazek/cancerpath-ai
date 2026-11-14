@@ -7,7 +7,7 @@ import Simulator from "@/components/Simulator";
 import { Card, Chip, SourceBadge, Sparkline } from "@/components/ui";
 import { actionsFor, THL_2016_URL } from "@/lib/actions";
 import {
-  countyByCode, counties, data, findingsFor, fmt, fmtU, nationalSeries, nationalValue, rank, series, stageMeta, stageScores, STAGES, value, weakestStage, latestYear,
+  EXCLUDED, SERIES_NOTES, countyByCode, counties, data, findingsFor, fmt, fmtU, nationalSeries, nationalValue, rank, series, stageMeta, stageScores, STAGES, value, weakestStage, latestYear,
 } from "@/lib/analysis";
 
 export function generateStaticParams() {
@@ -40,6 +40,10 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
   const msg = weakClear
     ? `${c.name}'s pathway falls furthest behind at the ${stageMeta(weak!.stage).label.toLowerCase()} stage${strongest[0] ? `, led by ${strongest[0].ind.short.toLowerCase()} (${fmtU(strongest[0].value, strongest[0].ind.unit)} vs Finland ${fmt(strongest[0].national)})` : ""}.`
     : `${c.name} has no pathway stage clearly behind other counties on the public indicators. The priority is to start measuring time to treatment.`;
+  const det = stages.find((s) => s.stage === "detection")?.score;
+  const downstream = weakClear && weak!.stage === "outcome" && det != null && det >= -0.2
+    ? " Detection measures are on par or better, so the gap is likely created downstream, in diagnosis and treatment: the stage that is not publicly measured. Start with action A7."
+    : "";
   const mapDatum = Object.fromEntries(counties.map((x) => [x.code, { code: x.code, name: x.name, fill: x.code === code ? "#0369a1" : "#e2e8f0", label: x.code === code ? "Selected" : "Open county" }]));
 
   return (
@@ -51,7 +55,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
           <div className="text-sm text-slate-500">{c.nameFi} · wellbeing services area {c.code} · population {fmt(value("population", code))} ({latestYear("population")}) · foreign citizens {fmt(value("foreign_pct", code))}% (FI {fmt(nationalValue("foreign_pct"))}%) · low-income rate {fmt(value("low_income", code))}% (FI {fmt(nationalValue("low_income"))}%)</div>
           <div className="mt-3 rounded-xl border-l-4 border-sky-700 bg-white p-4 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-wide text-sky-700">Key message</div>
-            <p className="mt-1 text-lg font-medium leading-snug">{msg}</p>
+            <p className="mt-1 text-lg font-medium leading-snug">{msg}{downstream}</p>
           </div>
         </div>
         <div className="hidden lg:block print:hidden"><FinlandMap geo={data.geo} datum={mapDatum} selected={code} height={300} /></div>
@@ -111,7 +115,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
                       <td className="text-center">{f.rank ? `${f.rank}/${f.of}` : "—"}</td>
                       <td><Sparkline a={series(f.key, code)} b={nationalSeries(f.key)} better={f.ind.better} /></td>
                       <td className="text-xs">
-                        {f.value == null ? <span className="text-slate-400">no data</span> :
+                        {f.value == null ? <span className="text-slate-400">{EXCLUDED[f.key]?.[code] ? <span className="text-amber-700">excluded: incomplete HUS reporting</span> : "no data"}</span> :
                           f.signal === "strong" ? <span className="font-semibold text-red-700">Robust gap<br /><span className="font-normal text-slate-500">worst quartile {f.persistence.worstQ}/{f.persistence.years} yrs</span></span> :
                           f.signal === "moderate" ? <span className="font-semibold text-amber-700">Possible gap<br /><span className="font-normal text-slate-500">worst quartile {f.persistence.worstQ}/{f.persistence.years} yrs</span></span> :
                           <span className="text-slate-500">—</span>}
@@ -127,7 +131,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
             </table>
           </div>
           <p className="mt-2 text-xs text-slate-500">
-            &quot;Robust gap&quot; = at least 1 SD below the county average and in the worst quartile in ≥ 3 of the last 5 years. Survival = age-standardised 5-year relative survival (Finnish Cancer Registry, period method). Specialist waiting data is missing for the HUS-area Uusimaa counties.
+            &quot;Robust gap&quot; = at least 1 SD below the county average and in the worst quartile in ≥ 3 of the last 5 years. Survival = age-standardised 5-year relative survival (Finnish Cancer Registry, period method). Specialist waiting data is missing or incomplete for the HUS area (Helsinki excluded: it reports ~0 every year with gaps). {SERIES_NOTES.spec_wait6m}
           </p>
         </Card>
       </section>

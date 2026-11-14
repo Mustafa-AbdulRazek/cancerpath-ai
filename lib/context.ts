@@ -1,4 +1,4 @@
-import { countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
+import { EXCLUDED, SERIES_NOTES, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
 import { actionsFor, STRATEGY_URL, ROADMAP_URL, THL_2016_URL } from "./actions";
 
 export type Source = { id: string; label: string; url: string };
@@ -34,7 +34,7 @@ export function countyContext(code: string) {
     const s = sourceForIndicator(x.key);
     sources.push(s);
     if (x.value == null) {
-      lines.push(`[${s.id}] ${x.ind.label}: NO DATA for this county in ${x.year}.`);
+      lines.push(`[${s.id}] ${x.ind.label}: NO DATA for this county in ${x.year}${EXCLUDED[x.key]?.[code] ? ` (excluded as unreliable: ${EXCLUDED[x.key][code]})` : ""}.`);
       continue;
     }
     const t = x.trend ? ` Change ${x.trend.from}→${x.trend.to}: ${x.trend.delta > 0 ? "+" : ""}${fmt(x.trend.delta)} (${x.trend.improving ? "improving" : "worsening"}).` : "";
@@ -72,6 +72,7 @@ export function nationalContext() {
     lines.push(`[E${i + 1}] Equity (ecological, county-level, not causal): ${e.text}: correlation r = ${r.r.toFixed(2)} across ${r.n} areas.`);
     sources.push({ id: `E${i + 1}`, label: `CancerPath AI county-level correlation: ${e.text}`, url: "https://cancerpath-ai.vercel.app/" });
   });
+  lines.push(`[S3336] Note on specialist waiting: ${SERIES_NOTES.spec_wait6m} HUS-area data is missing or incomplete; Helsinki is excluded.`);
   for (const ind of indicators.filter((i) => i.stage !== "context" || i.key.startsWith("screen_colorectal_"))) {
     const s = nationalSeries(ind.key);
     if (!s.length) continue;

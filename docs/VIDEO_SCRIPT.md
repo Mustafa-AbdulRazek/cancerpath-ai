@@ -4,12 +4,12 @@ Record a screen capture of the live app plus voice-over (one speaker). ~260 word
 
 | Time | Screen | Voice-over |
 |---|---|---|
-| 0:00–0:15 | Home page hero | "Finland's cancer strategy promises equal care: treatment within target times, wherever you live. But no county can see *where* its patients lose time. CancerPath AI shows them." |
-| 0:15–0:35 | Three headline cards | "Using open THL and Cancer Registry data for all 22 areas: more than half of non-urgent GP visits now wait over a week. Specialist queues over 6 months: 99 per 10,000 in North Karelia, 1.4 in Helsinki. And screening misses most in diverse urban areas: colorectal screening is below the 80 percent target everywhere." |
-| 0:35–0:50 | Map, "weakest stage" mode → click North Karelia | "The map shows the stage where each county's pathway falls furthest behind. Let's open North Karelia." |
-| 0:50–1:10 | Pathway strip + evidence table | "Detection is on par overall, but the gap emerges at referral: the most congested specialist care in Finland, plus the lowest cervical screening. Every number has its source, and we separate robust, multi-year gaps from noise. The treatment stage is grey: referral-to-treatment times are not in any national open data. That is the blind spot." |
-| 1:10–1:35 | Action plan cards | "So CancerPath turns the gap into a 90-day plan: a suspected-cancer referral fast track on the Nordic model, nurse navigators, HPV self-sampling. Each action has an owner, a KPI, evidence, and the national roadmap action it delivers." |
+| 0:00–0:15 | Home page, paradox card | "A 60-year-old in Lahti sees a GP faster than anyone in Finland, yet Päijät-Häme has the country's lowest colon cancer survival, down from 70 to 63 percent. Why?" |
+| 0:15–0:35 | Headline cards + equity | "Finland's cancer strategy promises equal outcomes. CancerPath AI starts from unequal survival in all 22 areas and traces it back to the step where the gap is created. The data also shows who is missed: screening is lowest in diverse urban areas." |
+| 0:35–0:50 | Map → click Päijät-Häme | "The map shows where each county falls furthest behind. Hatched areas are where data is incomplete, and we say so. Let's open Päijät-Häme." |
+| 0:50–1:10 | Pathway strip + evidence table | "Detection is fine here, so the gap is created downstream, in diagnosis and treatment. And that is exactly the stage nobody measures: referral-to-treatment times are in no national open data. Every number has a source, and we separate multi-year gaps from noise." |
+| 1:10–1:35 | Action plan cards | "So CancerPath turns the gap into a 90-day plan: first, measure time-to-treatment from the county's own data with THL definitions; then a suspected-cancer fast track on the Nordic model, nurse navigators and FIT triage. Each action has an owner, a KPI, evidence, and the roadmap action it delivers." |
 | 1:35–1:52 | Click "Generate brief" (Suomi) | "Gemini writes a two-minute brief for the county board, in Finnish or English. Every claim is cited, and every number is automatically checked against the data." |
 | 1:52–2:00 | Logo / URL | "CancerPath AI: from where the gap is, to what to do on Monday." |
 
-Tips: record at 1080p, browser zoom 110%, close the dev overlay, pre-load North Karelia, and generate the brief once beforehand so it's fast.
+Tips: record at 1080p, browser zoom 110%, close the dev overlay, pre-load Päijät-Häme (/county/09), and generate the brief once beforehand so it's fast.
