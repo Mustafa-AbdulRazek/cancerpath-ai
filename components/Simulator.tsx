@@ -9,7 +9,8 @@ export default function Simulator({ programmes, countyName }: { programmes: Prog
   const p = programmes.find((x) => x.key === k) || programmes[0];
   const [goal, setGoal] = useState(Math.max(p?.target ?? 80, Math.ceil(p?.current ?? 0)));
   if (!p) return null;
-  const extra = p.eligible ? Math.max(0, Math.round((p.eligible * (goal - p.current)) / 100)) : undefined;
+  const round = (n: number) => (n >= 1000 ? Math.round(n / 100) * 100 : Math.round(n / 10) * 10);
+  const extra = p.eligible ? Math.max(0, round((p.eligible * (goal - p.current)) / 100)) : undefined;
   const per1000 = Math.max(0, Math.round(((goal - p.current) / 100) * 1000));
   return (
     <div className="space-y-3">
@@ -25,10 +26,10 @@ export default function Simulator({ programmes, countyName }: { programmes: Prog
       </div>
       <input type="range" min={Math.floor(p.current)} max={95} step={0.5} value={goal} onChange={(e) => setGoal(+e.target.value)} className="w-full accent-[var(--accent)]" aria-label="Participation goal" />
       <div className="rounded-[6px] border border-[var(--line)] bg-white p-4">
-        <div className="text-3xl font-semibold">{extra != null ? `+${extra.toLocaleString("en-GB")}` : `+${per1000}`}</div>
+        <div className="text-3xl font-semibold">{extra != null ? `≈ +${extra.toLocaleString("en-GB")}` : `+${per1000}`}</div>
         <div className="text-sm text-[var(--muted)]">
           {extra != null
-            ? <>more people screened per round in {countyName}{p.intervalYears ? ` (≈ ${Math.round(extra / p.intervalYears).toLocaleString("en-GB")} a year)` : ""}. That is +{per1000} per 1,000 invited.</>
+            ? <>more people screened per round in {countyName}{p.intervalYears ? ` (≈ ${round(extra / p.intervalYears).toLocaleString("en-GB")} a year)` : ""}. That is +{per1000} per 1,000 invited.</>
             : <>more people screened per 1,000 invited.</>}
         </div>
       </div>

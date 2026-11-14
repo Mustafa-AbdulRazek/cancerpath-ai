@@ -105,7 +105,7 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
           <div><span className="font-medium">Owner:</span> {first.owner}</div>
           <div><span className="font-medium">KPI:</span> {first.kpi}</div>
           {first.impact && <div className="sm:col-span-2"><span className="font-medium">Reach:</span> ≈ {first.impact.perRound.toLocaleString("en-GB")} more people screened per round</div>}
-          {firstPeer && <div className="sm:col-span-2"><span className="font-medium">Learn from:</span> {firstPeer.text}</div>}
+          {firstPeer && <div className="sm:col-span-2"><span className="font-medium">{firstPeer.label ?? "Learn from"}:</span> {firstPeer.text}</div>}
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">{DO_FIRST_RULE}</p>
       </section>

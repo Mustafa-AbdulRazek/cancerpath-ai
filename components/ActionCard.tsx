@@ -4,11 +4,15 @@ import { countyByCode, fmt, fmtU, stageMeta } from "@/lib/analysis";
 type Props = { a: Action & Partial<Pick<MatchedAction, "matchedOn" | "impact" | "score">>; rankNo?: number; open?: boolean };
 
 /** Peer benchmark: the best-performing county on the indicator that triggered the action. */
-export function learnFrom(a: Props["a"]) {
-  if (a.learnFrom) return a.learnFrom;
-  const m = a.matchedOn?.find((x) => x.best && x.best[0]);
+export function learnFrom(a: Props["a"]): { text: string; url?: string; label?: string } | undefined {
+  if (a.learnFrom) return { ...a.learnFrom, label: "Learn from" };
+  // Prefer process indicators (screening, waits): a county that does better there is a real peer to learn from.
+  const m = a.matchedOn?.find((x) => x.best && x.best[0] && x.ind.stage !== "outcome") ?? a.matchedOn?.find((x) => x.best && x.best[0]);
   if (!m || !m.best) return undefined;
-  return { text: `${countyByCode[m.best[0]]?.name}: ${m.ind.short.toLowerCase()} ${fmtU(m.best[1], m.ind.unit)}`, url: m.ind.url };
+  // For outcomes we only know who has the best result, not which practice caused it.
+  const label = m.ind.stage === "outcome" ? "Best outcome" : "Learn from";
+  const val = m.key === "smr" ? `cancer mortality ${Math.abs(Math.round(m.best[1] - 100))}% below expected` : `${m.ind.short.toLowerCase()} ${fmtU(m.best[1], m.ind.unit)}`;
+  return { text: `${countyByCode[m.best[0]]?.name}: ${val}`, url: m.ind.url, label };
 }
 
 export default function ActionCard({ a, rankNo, open }: Props) {
@@ -32,7 +36,7 @@ export default function ActionCard({ a, rankNo, open }: Props) {
             )}
             {peer && (
               <div className="sm:col-span-2">
-                <span className="text-[var(--ink)]">Learn from:</span> {peer.text}
+                <span className="text-[var(--ink)]">{peer.label ?? "Learn from"}:</span> {peer.text}
               </div>
             )}
           </div>

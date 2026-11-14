@@ -36,7 +36,8 @@ export function Answer({ r }: { r: Resp }) {
 export default function AnalystPanel({ county, countyName }: { county: string; countyName: string }) {
   const [lang, setLang] = useState<"en" | "fi">("en");
   const [brief, setBrief] = useState<Resp | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // brief
+  const [asking, setAsking] = useState(false); // Q&A
   const [q, setQ] = useState("");
   const [qa, setQa] = useState<{ q: string; r: Resp }[]>([]);
 
@@ -54,14 +55,14 @@ export default function AnalystPanel({ county, countyName }: { county: string; c
   }
   async function ask(question: string) {
     if (!question.trim()) return;
-    setLoading(true);
+    setAsking(true);
     setQ("");
     try {
       const history = qa.flatMap((x) => [{ role: "user", text: x.q }, { role: "model", text: x.r.text }]);
       const r = await call({ mode: "qa", county, question, lang, history });
       setQa((p) => [...p, { q: question, r }]);
     } finally {
-      setLoading(false);
+      setAsking(false);
     }
   }
   function printBrief() {
@@ -115,7 +116,7 @@ export default function AnalystPanel({ county, countyName }: { county: string; c
         <div className="mb-2 text-sm font-medium">Ask a question about {countyName}</div>
         <div className="mb-3 flex flex-wrap gap-2">
           {suggestions.map((s) => (
-            <button key={s} onClick={() => ask(s)} disabled={loading} className="rounded-[6px] border border-[var(--line)] bg-white px-3 py-1 text-xs hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40">
+            <button key={s} onClick={() => ask(s)} disabled={asking} className="rounded-[6px] border border-[var(--line)] bg-white px-3 py-1 text-xs hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40">
               {s}
             </button>
           ))}
@@ -136,7 +137,7 @@ export default function AnalystPanel({ county, countyName }: { county: string; c
           className="mt-3 flex gap-2"
         >
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about this county's cancer pathway…" className="flex-1 rounded-[6px] border border-[var(--line)] px-3 py-2 text-sm" />
-          <button disabled={loading} className="rounded-[6px] bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{loading ? "Asking…" : "Ask"}</button>
+          <button disabled={asking} className="rounded-[6px] bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{asking ? "Asking…" : "Ask"}</button>
         </form>
       </div>
     </div>

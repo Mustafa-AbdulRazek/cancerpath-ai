@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { countyContext, docContext, nationalContext, Source } from "@/lib/context";
+import { countySummary, keyMessageFi } from "@/lib/brief";
 import { countyByCode, fmt, fmtU, stageMeta } from "@/lib/analysis";
 
 export const runtime = "nodejs";
@@ -19,17 +20,17 @@ STRICT RULES:
 7. Correlation is not causation. Phrase possible causes as hypotheses to verify ("may indicate", "should be checked").
 8. Write for a non-technical health decision-maker: short sentences, no jargon, no markdown tables.`;
 
-const BRIEF_TASK = (lang: string) => lang === "fi" ? `Kirjoita tälle hyvinvointialueelle 2 minuutin päätöksentekotiivistelmä suomeksi. Käytä täsmälleen näitä otsikoita:
+const BRIEF_TASK = (lang: string, keyMessage?: string) => lang === "fi" ? `Kirjoita tälle hyvinvointialueelle 2 minuutin päätöksentekotiivistelmä suomeksi. Käytä täsmälleen näitä otsikoita:
 **Keskeinen viesti** (1–2 virkettä: missä hoitopolun vaiheessa ero syntyy)
 **Mitä data näyttää** (3–4 luettelokohtaa, tärkeimmät erot koko maahan numeroin ja lähdeviittein)
 **Toimet seuraavan 90 päivän aikana** (3 tärkeintä toimenpidettä RECOMMENDED ACTIONS -listasta, vastuutaho ja mittari, viite [A#])
 **Mitä emme vielä näe** (1–2 kohtaa tietopuutteista, viite [D#])
-Enintään 230 sanaa.` : `Write a 2-minute decision brief for this county. Use exactly these headings:
+Enintään 230 sanaa.${keyMessage ? `\n\nKeskeisen viestin TÄYTYY sanoa sama kuin tämä tarkistettu yhteenveto (käännä suomeksi, säilytä luvut, älä lisää mitään): "${keyMessage}"` : ""}` : `Write a 2-minute decision brief for this county. Use exactly these headings:
 **Key message** (1–2 sentences: where in the pathway the gap emerges)
 **What the data shows** (3–4 bullet points, the most important gaps vs Finland with numbers and citations)
 **What to do in the next 90 days** (the top 3 actions from the RECOMMENDED ACTIONS, each with its owner and KPI, cite [A#])
 **What we cannot see yet** (1–2 bullets on data gaps, cite [D#])
-Max 230 words.`;
+Max 230 words.${keyMessage ? `\n\nThe Key message MUST say the same as this verified summary (translate if writing in Finnish, keep its numbers, add nothing): "${keyMessage}". Never call a step or indicator good if any indicator in it is below target or ranked in the bottom quarter.` : ""}`;
 
 function numbersIn(s: string): string[] {
   // numbers like 54.7, 1,000, 13 300, 80 — ignore citation IDs, years in ranges are still checked
@@ -134,7 +135,7 @@ export async function POST(req: Request) {
   const hit = cacheKey ? briefCache.get(cacheKey) : undefined;
   if (hit && Date.now() - hit.at < CACHE_MS) return NextResponse.json({ ...(hit.payload as object), cached: true });
 
-  const task = mode === "brief" ? BRIEF_TASK(lang) : `Question: ${body.question || ""}\nAnswer in ${lang === "fi" ? "Finnish" : "English"} in at most 180 words, with citations.`;
+  const task = mode === "brief" ? BRIEF_TASK(lang, code ? countySummary(code).message : undefined) : `Question: ${body.question || ""}\nAnswer in ${lang === "fi" ? "Finnish" : "English"} in at most 180 words, with citations.`;
   const contents = [
     ...(body.history || []).slice(-6).map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
     { role: "user", parts: [{ text: `CONTEXT:\n${context}\n\nTASK:\n${task}` }] },
@@ -147,6 +148,13 @@ export async function POST(req: Request) {
     if (mode === "brief" && code) text = fallbackBrief(code);
     else text = "The AI analyst is offline (no Gemini API key configured). Open a county page to see the rule-based brief and action plan.";
     engine = "rule-based fallback";
+  }
+  // The key message is always the verified deterministic summary, so the AI cannot contradict the page.
+  if (mode === "brief" && code && engine !== "rule-based fallback") {
+    const msg = lang === "fi" ? keyMessageFi(code) : countySummary(code).message;
+    const re = /(\*\*(?:Key message|Keskeinen viesti)\*\*[^\S\n]*\n)([\s\S]*?)(\n\s*\*\*)/;
+    const heading = lang === "fi" ? "Keskeinen viesti" : "Key message";
+    text = re.test(text) ? text.replace(re, (_m, h: string, _b: string, n: string) => h + msg + "\n" + n) : `**${heading}**\n${msg}\n\n` + text;
   }
   const cited = [...new Set((text.match(/\[([A-Z]\d+[a-z]?)\]/g) || []).map((s) => s.slice(1, -1)))];
   // support multi-citations like [S3620, D3]

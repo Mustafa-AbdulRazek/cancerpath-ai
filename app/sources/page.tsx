@@ -65,7 +65,7 @@ export default function SourcesPage() {
             <li>GP waiting (6411) measures non-urgent visits. Urgent cancer suspicions should bypass this queue, so it is a proxy for access, not cancer-specific delay. <b>Its trend is also affected by legal changes</b>: the care-guarantee limit was 14 days from Sept 2023, the planned 7-day limit was cancelled, and a relaxation to three months was proposed from 2025 (HE 134/2024).</li>
             <li>Survival figures are age-standardised period estimates over several years. Differences within ±2 percentage points of Finland are labelled as small and never scored as a robust gap. Small counties (e.g. Kainuu) have wider uncertainty; cervical cancer survival is flagged as noisy and excluded from scoring.</li>
             <li>Associations between indicators are not causal. Our gap findings are hypotheses for the county to verify with its own data.</li>
-            <li>County-level cancer mortality is not available in the open indicator API, so the &quot;mortality −10%&quot; target is tracked nationally only.</li>
+            <li>Only crude county cancer death rates are published (StatFin 13u5), and they mostly reflect age structure. No age-standardised county rate is published, so we compute an indirectly standardised mortality ratio (SMR, 2021–2025) with 95% confidence intervals.</li>
           </ul>
         </Card>
       </div>

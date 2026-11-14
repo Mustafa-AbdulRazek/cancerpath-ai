@@ -30,7 +30,9 @@ export default function Home() {
 
   const ranked = counties
     .map((c) => ({ c, score: overallScore(c.code), weak: weakestStage(c.code) }))
-    .sort((a, b) => a.score - b.score);
+    .map((x) => ({ ...x, clear: !!x.weak && x.weak.score < -0.35 }))
+    // Counties with a clear gap first, ordered by how far behind their weakest step is; then the rest by overall score.
+    .sort((a, b) => (a.clear !== b.clear ? (a.clear ? -1 : 1) : a.clear ? a.weak!.score - b.weak!.score : a.score - b.score));
 
   const indicatorMode = (key: string): MapMode => {
     const ind = indicatorByKey[key];
@@ -90,7 +92,7 @@ export default function Home() {
         <div className="rounded-[6px] border border-[var(--line)] bg-white p-4">
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className="font-semibold">Where to look first</h2>
-            <span className="text-xs text-[var(--muted)]">largest overall gap first</span>
+            <span className="text-xs text-[var(--muted)]">largest gap in any step first</span>
           </div>
           <ol className="divide-y divide-[var(--line)]">
             {ranked.map(({ c, weak }, i) => {
@@ -129,7 +131,7 @@ export default function Home() {
             <div>
               <p className="font-medium">1. Colon cancer survival differs by {fmt((colon.best?.[1] ?? 0) - (colon.worst?.[1] ?? 0))} percentage points between counties ({fmt(colon.worst?.[1])}–{fmt(colon.best?.[1])}%); breast cancer by only {fmt((breast.best?.[1] ?? 0) - (breast.worst?.[1] ?? 0))} ({fmt(breast.worst?.[1])}–{fmt(breast.best?.[1])}%).</p>
               <p className="mt-1 text-sm text-[var(--muted)]">
-                In Päijät-Häme, colon cancer survival fell from {fmt(ph[0].value)}% to {fmt(ph[ph.length - 1].value)}% ({ph[0].year}–{ph[ph.length - 1].year}) while Finland rose to {fmt(fiColon[fiColon.length - 1]?.value)}%. Nationally, {FACTS.survey.text.charAt(0).toLowerCase() + FACTS.survey.text.slice(1)}. So the gap is likely created after the first GP contact: recognising symptoms, referral and diagnostics. <Link href="/county/09" className="text-[var(--accent)] hover:underline">Open Päijät-Häme</Link>
+                In Päijät-Häme, colon cancer survival fell from {fmt(ph[0].value)}% to {fmt(ph[ph.length - 1].value)}% ({ph[0].year}–{ph[ph.length - 1].year}) while Finland rose to {fmt(fiColon[fiColon.length - 1]?.value)}%. Nationally, {FACTS.survey.text.charAt(0).toLowerCase() + FACTS.survey.text.slice(1)}. So the gap may be created after the first GP contact (recognising symptoms, referral and diagnostics); measuring time to treatment would show it. <Link href="/county/09" className="text-[var(--accent)] hover:underline">Open Päijät-Häme</Link>
               </p>
               <p className="mt-1 text-xs text-[var(--muted)]">
                 <SourceBadge href={indicatorByKey.surv_colon.url} label="Sotkanet 3627" />, <SourceBadge href={indicatorByKey.surv_breast.url} label="3625" />, <SourceBadge href={FACTS.survey.url} label="patient survey 2025" />. Survival is a period estimate over overlapping years: read it as a sustained decline, not proof of cause.

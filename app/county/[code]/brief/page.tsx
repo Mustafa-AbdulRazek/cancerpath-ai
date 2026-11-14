@@ -50,7 +50,7 @@ export default async function BriefPage({ params }: { params: Promise<{ code: st
             <li key={a.id}>
               <span className="font-medium">{a.title}.</span> Owner: {a.owner}. KPI: {a.kpi}.
               {a.impact ? ` Reach: about ${a.impact.perRound.toLocaleString("en-GB")} more people screened per round.` : ""}
-              {peer ? ` Learn from: ${peer.text}.` : ""} Roadmap {a.roadmap.join(", ")}.
+              {peer ? ` ${peer.label ?? "Learn from"}: ${peer.text}.` : ""} Roadmap {a.roadmap.join(", ")}.
             </li>
           );
         })}

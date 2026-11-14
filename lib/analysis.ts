@@ -302,8 +302,9 @@ export function screeningImpact(key: string, code: string, target = 80) {
   const pop = data.eligible?.[code]?.[band];
   if (!band || v == null || !pop || v >= target) return undefined;
   const meta = data.eligibleMeta.bands[band];
-  const perRound = Math.round((pop * (target - v)) / 100);
-  return { perRound, perYear: Math.round(perRound / meta.intervalYears), pop, band, bandLabel: meta.label, intervalYears: meta.intervalYears, current: v, target, popYear: data.eligibleMeta.year };
+  const raw = (pop * (target - v)) / 100;
+  const perRound = approx(raw);
+  return { perRound, perYear: approx(raw / meta.intervalYears), pop, band, bandLabel: meta.label, intervalYears: meta.intervalYears, current: v, target, popYear: data.eligibleMeta.year };
 }
 
 /** Rank of the county's stage score among counties with data (1 = best). */
@@ -349,5 +350,13 @@ export function phrase(f: { key: string; value?: number; national?: number; ind:
     const d = Math.round(f.value - 100);
     return `cancer mortality ${Math.abs(d)}% ${d >= 0 ? "above" : "below"} what its age structure predicts`;
   }
-  return `${f.ind.short.toLowerCase()} ${fmtU(f.value, f.ind.unit)} vs ${fmtU(f.national, f.ind.unit)}`;
+  const s = f.ind.short;
+  // keep acronyms like "GP" upper-case; lower-case only an ordinary first word
+  const label = /^[A-Z]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1);
+  return `${label} ${fmtU(f.value, f.ind.unit)} vs ${fmtU(f.national, f.ind.unit)}`;
+}
+
+/** Round an approximate count for display: ≥ 1,000 to the nearest 100, otherwise to the nearest 10. */
+export function approx(n: number) {
+  return n >= 1000 ? Math.round(n / 100) * 100 : Math.round(n / 10) * 10;
 }

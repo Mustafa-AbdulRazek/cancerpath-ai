@@ -15,7 +15,7 @@ export function countySummary(code: string) {
 
   let message: string;
   if (downstream) {
-    message = `${c.name}'s cancer outcomes lag (${fact(inStage)}) while its detection measures are on par. The gap is likely created after the first GP contact (recognising symptoms, referral and diagnostics), which is not publicly measured.`;
+    message = `${c.name}'s cancer outcomes lag (${fact(inStage)}) while its detection measures are on par. The gap may be created after the first GP contact (recognising symptoms, referral and diagnostics), a step that is not publicly measured; measuring time to treatment (A7) would show it.`;
   } else if (clear) {
     message = `${c.name} falls furthest behind at the ${stageMeta(weak!.stage).label.toLowerCase()} step${inStage ? `: ${fact(inStage)}` : ""}.`;
   } else {
@@ -24,4 +24,33 @@ export function countySummary(code: string) {
   const gaps = usable.filter((f) => f.z! <= -0.5 || f.belowTarget).sort((a, b) => a.z! - b.z!).slice(0, 4);
   const plan = actionsFor(code, 5);
   return { county: c, weak: clear ? weak : undefined, downstream, message, gaps, plan, first: doFirst(plan) };
+}
+
+const FI_NAMES: Record<string, string> = {
+  surv_colon: "paksusuolisyövän 5 vuoden elossaololuku",
+  surv_breast: "rintasyövän 5 vuoden elossaololuku",
+  screen_breast: "rintasyöpäseulontaan osallistuminen",
+  screen_cervical: "kohdunkaulasyöpäseulontaan osallistuminen",
+  screen_colorectal: "suolistosyöpäseulontaan osallistuminen",
+  phc_wait7: "yli 7 päivää odottaneet kiireettömät lääkärikäynnit (3 v keskiarvo)",
+  spec_wait6m: "yli 6 kk erikoissairaanhoitoa odottaneet / 10 000 asukasta",
+};
+const FI_STAGES: Record<string, string> = { detection: "varhainen toteaminen", referral: "lähete", treatment: "diagnoosi → hoito", outcome: "hoitotulokset" };
+
+/** Finnish version of the verified key message (same logic and numbers as countySummary). */
+export function keyMessageFi(code: string) {
+  const s = countySummary(code);
+  const c = s.county;
+  const name = c.nameFi; // e.g. "Päijät-Hämeen hyvinvointialue", used as a label
+  const f = s.weak ? findingsFor(code).filter((x) => x.z != null && !x.ind.noisy && !x.smallDiff && x.ind.stage === s.weak!.stage).sort((a, b) => a.z! - b.z!)[0] : undefined;
+  const pct = f && f.ind.unit.startsWith("%") ? " %" : "";
+  const num = (v?: number) => (v == null ? "–" : String(Math.round(v * 10) / 10).replace(".", ",") + pct);
+  const fact = f
+    ? f.key === "smr"
+      ? `syöpäkuolleisuus ${Math.abs(Math.round(f.value! - 100))} % ${f.value! >= 100 ? "yli" : "alle"} ikärakenteen perusteella odotetun, sija ${f.rank}/${f.of}`
+      : `${FI_NAMES[f.key] ?? f.ind.short} ${num(f.value)} vs. ${num(f.national)} koko maassa, sija ${f.rank}/${f.of}`
+    : "";
+  if (s.downstream) return `${name}: syövänhoidon tulokset jäävät jälkeen (${fact}), vaikka varhaisen toteamisen mittarit ovat maan tasolla. Ero voi syntyä ensimmäisen lääkärikäynnin jälkeen (oireiden tunnistaminen, lähete ja diagnostiikka), jota ei mitata julkisesti; hoitoonpääsyn ajan mittaaminen (A7) toisi sen näkyviin.`;
+  if (s.weak) return `${name}: hoitopolku jää eniten jälkeen vaiheessa "${FI_STAGES[s.weak.stage]}"${fact ? `: ${fact}` : ""}.`;
+  return `${name}: mikään hoitopolun vaihe ei jää selvästi jälkeen julkisissa mittareissa. Seuraava askel on mitata hoitoonpääsyn aika lähetteestä hoitoon.`;
 }
