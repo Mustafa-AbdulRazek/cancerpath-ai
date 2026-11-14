@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AnalystPanel from "@/components/AnalystPanel";
-import ActionCard from "@/components/ActionCard";
-import FinlandMap from "@/components/FinlandMap";
+import ActionCard, { learnFrom } from "@/components/ActionCard";
 import Simulator from "@/components/Simulator";
-import { Card, Chip, SourceBadge, Sparkline } from "@/components/ui";
-import { actionsFor, THL_2016_URL } from "@/lib/actions";
+import { Section, SourceBadge, Sparkline } from "@/components/ui";
+import { DO_FIRST_RULE, THL_2016_URL } from "@/lib/actions";
 import {
-  EXCLUDED, SCREEN_BAND, SERIES_NOTES, countyByCode, counties, data, findingsFor, fmt, fmtU, nationalSeries, nationalValue, rank, series, stageMeta, stageScores, STAGES, value, weakestStage, latestYear,
+  cancersPerYear, countyByCode, counties, data, EXCLUDED, findingsFor, fmt, fmtU, latestYear, nationalSeries, nationalValue, ordinal,
+  SCREEN_BAND, series, SERIES_NOTES, stageMeta, stageRank, stageScores, STAGES, value,
 } from "@/lib/analysis";
+import { countySummary } from "@/lib/brief";
 
 export function generateStaticParams() {
   return counties.map((c) => ({ code: c.code }));
@@ -23,11 +24,12 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
   const { code } = await params;
   const c = countyByCode[code];
   if (!c) notFound();
+  const s = countySummary(code);
   const stages = stageScores(code);
-  const weak = weakestStage(code);
   const findings = findingsFor(code);
-  const actions = actionsFor(code, 5);
-  const weakClear = weak && weak.score < -0.35;
+  const first = s.first;
+  const firstPeer = learnFrom(first);
+  const perYear = cancersPerYear(code);
 
   const programmes = ["screen_cervical", "screen_colorectal", "screen_breast"]
     .map((k) => {
@@ -37,137 +39,137 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
     })
     .sort((a, b) => a.current - b.current);
 
-  const strongest = findings.filter((f) => f.z != null && f.z <= -0.5 && !f.ind.noisy).sort((a, b) => a.z! - b.z!);
-  const msg = weakClear
-    ? `${c.name}'s pathway falls furthest behind at the ${stageMeta(weak!.stage).label.toLowerCase()} stage${strongest[0] ? `, led by ${strongest[0].ind.short.toLowerCase()} (${fmtU(strongest[0].value, strongest[0].ind.unit)} vs Finland ${fmt(strongest[0].national)})` : ""}.`
-    : `${c.name} has no pathway stage clearly behind other counties on the public indicators. The priority is to start measuring time to treatment.`;
-  const det = stages.find((s) => s.stage === "detection")?.score;
-  const downstream = weakClear && weak!.stage === "outcome" && det != null && det >= -0.2
-    ? " Detection measures are on par or better, so the gap is likely created downstream, in diagnosis and treatment: the stage that is not publicly measured. Start with action A7."
-    : "";
-  const mapDatum = Object.fromEntries(counties.map((x) => [x.code, { code: x.code, name: x.name, fill: x.code === code ? "#0369a1" : "#e2e8f0", label: x.code === code ? "Selected" : "Open county" }]));
+  const stats = [
+    { label: "Population", value: fmt(value("population", code)), sub: String(latestYear("population")) },
+    { label: "Foreign citizens", value: `${fmt(value("foreign_pct", code))}%`, sub: `Finland ${fmt(nationalValue("foreign_pct"))}%` },
+    { label: "Low-income rate", value: `${fmt(value("low_income", code))}%`, sub: `Finland ${fmt(nationalValue("low_income"))}%` },
+    { label: "New cancers a year", value: perYear ? `≈ ${fmt(perYear)}` : "n/a", sub: "estimate from population share" },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="text-sm text-slate-500 print:hidden"><Link href="/" className="hover:underline">Finland</Link> / {c.name}</div>
-      <section className="grid gap-6 lg:grid-cols-[1fr_200px]">
-        <div>
-          <h1 className="text-3xl font-bold">{c.name}</h1>
-          <div className="text-sm text-slate-500">{c.nameFi} · wellbeing services area {c.code} · population {fmt(value("population", code))} ({latestYear("population")}) · foreign citizens {fmt(value("foreign_pct", code))}% (FI {fmt(nationalValue("foreign_pct"))}%) · low-income rate {fmt(value("low_income", code))}% (FI {fmt(nationalValue("low_income"))}%)</div>
-          <div className="mt-3 rounded-xl border-l-4 border-sky-700 bg-white p-4 shadow-sm">
-            <div className="text-xs font-semibold uppercase tracking-wide text-sky-700">Key message</div>
-            <p className="mt-1 text-lg font-medium leading-snug">{msg}{downstream}</p>
-          </div>
-        </div>
-        <div className="hidden lg:block print:hidden"><FinlandMap geo={data.geo} datum={mapDatum} selected={code} height={300} /></div>
-      </section>
+    <div className="space-y-8">
+      <div className="text-sm text-[var(--muted)] print:hidden"><Link href="/" className="hover:underline">Counties</Link> / {c.name}</div>
 
       <section>
-        <h2 className="mb-2 text-lg font-bold">Cancer care pathway: where the gap emerges</h2>
-        <div className="grid gap-3 md:grid-cols-4">
-          {STAGES.map((s, i) => {
-            const sc = stages.find((x) => x.stage === s.key)!;
-            const isWeak = weakClear && weak!.stage === s.key;
-            const status = sc.score == null ? "No public data" : sc.score <= -0.75 ? "Clearly behind" : sc.score <= -0.35 ? "Behind" : sc.score < 0.35 ? "On par" : "Ahead";
-            const col = sc.score == null ? "#7c3aed" : sc.score <= -0.35 ? "#dc2626" : sc.score < 0.35 ? "#64748b" : "#0f766e";
-            return (
-              <div key={s.key} className={`relative rounded-xl border bg-white p-4 shadow-sm ${isWeak ? "border-red-400 ring-2 ring-red-200" : "border-slate-200"} ${sc.score == null ? "border-dashed border-violet-300 bg-violet-50" : ""}`}>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: s.color }}>{i + 1}</span>
-                  <span className="font-semibold">{s.label}</span>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold">{c.name}</h1>
+            <div className="text-sm text-[var(--muted)]">{c.nameFi}</div>
+          </div>
+          <Link href={`/county/${code}/brief`} className="rounded-[6px] bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 print:hidden">Download 1-page brief</Link>
+        </div>
+        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
+          {stats.map((x) => (
+            <div key={x.label}>
+              <dt className="text-xs text-[var(--muted)]">{x.label}</dt>
+              <dd className="text-lg font-semibold">{x.value}</dd>
+              <dd className="text-xs text-[var(--muted)]">{x.sub}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-5 max-w-3xl text-lg leading-snug">{s.message}</p>
+      </section>
+
+      <section aria-label="Cancer care pathway">
+        <ol className="grid gap-2 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] md:items-stretch">
+          {STAGES.map((st, i) => {
+            const sc = stages.find((x) => x.stage === st.key)!;
+            const isWeak = s.weak?.stage === st.key;
+            const r = sc.score != null ? stageRank(code, st.key) : undefined;
+            const status = sc.score == null ? "Not measured" : sc.score <= -0.35 ? "Behind" : sc.score < 0.35 ? "On par" : "Ahead";
+            return [
+              <li key={st.key} className={`rounded-[6px] border bg-white p-3 ${isWeak ? "border-[var(--worse)] ring-1 ring-[var(--worse)]" : "border-[var(--line)]"} ${sc.score == null ? "border-dashed" : ""}`}>
+                <div className="flex items-center gap-2 text-sm font-medium" style={{ color: st.color }}>
+                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: st.color }} />
+                  {st.label}
                 </div>
-                <div className="mt-1 text-xs text-slate-500">{s.question}</div>
-                <div className="mt-3 text-xl font-bold" style={{ color: col }}>{status}</div>
-                <div className="text-xs text-slate-500">
-                  {sc.score == null ? (s.key === "treatment" ? "Referral → treatment times are not in national open data." : "No county data for this stage.") : `Stage score ${sc.score.toFixed(2)} SD vs county average`}
+                <div className={`mt-1 text-lg font-semibold ${isWeak ? "text-[var(--worse)]" : ""}`}>{status}</div>
+                <div className="text-xs text-[var(--muted)]">
+                  {sc.score == null
+                    ? st.key === "treatment" ? "No public data by county" : "Data missing or incomplete"
+                    : r?.rank ? `${ordinal(r.rank)} of ${r.of} counties` : ""}
                 </div>
-                {s.key === "treatment" && <div className="mt-2"><SourceBadge href={THL_2016_URL} label="Measure with THL 21/2016 → A7" /></div>}
-                {s.key === "referral" && sc.score != null && <div className="mt-1 text-[11px] text-slate-400">Proxy: all-specialty queue, not cancer-specific</div>}
-                {isWeak && <div className="absolute -top-2 right-3 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">Gap emerges here</div>}
-              </div>
-            );
+                {isWeak && <div className="mt-1 text-xs font-medium text-[var(--worse)]">The gap emerges here</div>}
+                {st.key === "referral" && sc.score != null && <div className="mt-1 text-[11px] text-[var(--muted)]">All-specialty queue, used as a proxy</div>}
+              </li>,
+              i < STAGES.length - 1 ? <li key={st.key + "-arrow"} aria-hidden className="hidden self-center text-[var(--muted)] md:block">→</li> : null,
+            ];
           })}
-        </div>
+        </ol>
       </section>
 
-      <section>
-        <Card>
-          <h2 className="text-lg font-bold">Evidence: every indicator, every source</h2>
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="py-2">Stage</th><th>Indicator</th><th className="text-right">{c.short}</th><th className="text-right">Finland</th><th className="text-right">Best county</th><th className="text-center">Rank</th><th>Trend (— Finland)</th><th>Signal</th><th>Source</th>
-                </tr>
-              </thead>
-              <tbody>
-                {findings.map((f) => {
-                  const st = stageMeta(f.ind.stage as never);
-                  return (
-                    <tr key={f.key} className="border-b border-slate-100 align-middle">
-                      <td className="py-2"><Chip color={st.color}>{st.label}</Chip></td>
-                      <td className="max-w-[230px]">
-                        <div className="font-medium">{f.ind.short}</div>
-                        <div className="text-xs text-slate-500">{f.ind.unit} · {f.year}{f.ind.better === "lower" ? " · lower is better" : ""}</div>
-                      </td>
-                      <td className="text-right font-semibold">{fmt(f.value)}{f.belowTarget && <div className="text-[10px] font-semibold text-red-600">below 80% target</div>}</td>
-                      <td className="text-right">{fmt(f.national)}</td>
-                      <td className="text-right text-slate-600">{fmt(f.best?.[1])}<div className="text-[10px] text-slate-400">{f.best ? countyByCode[f.best[0]]?.short : ""}</div></td>
-                      <td className="text-center">{f.rank ? `${f.rank}/${f.of}` : "—"}</td>
-                      <td><Sparkline a={series(f.key, code)} b={nationalSeries(f.key)} better={f.ind.better} /></td>
-                      <td className="text-xs">
-                        {f.value == null ? <span className="text-slate-400">{EXCLUDED[f.key]?.[code] ? <span className="text-amber-700">excluded: incomplete HUS reporting</span> : "no data"}</span> :
-                          f.signal === "strong" ? <span className="font-semibold text-red-700">Robust gap<br /><span className="font-normal text-slate-500">worst quartile {f.persistence.worstQ}/{f.persistence.years} yrs</span></span> :
-                          f.signal === "moderate" ? <span className="font-semibold text-amber-700">Possible gap<br /><span className="font-normal text-slate-500">worst quartile {f.persistence.worstQ}/{f.persistence.years} yrs</span></span> :
-                          <span className="text-slate-500">—</span>}
-                        {f.earlyWarning && <div className="font-semibold text-red-700">⚠ worsening fast</div>}
-                        {f.ind.noisy && <div className="text-slate-400">small numbers</div>}
-                        {f.smallDiff && <div className="text-slate-400">within ±2 pp of Finland</div>}
-                      </td>
-                      <td><SourceBadge href={f.ind.url} label={`Sotkanet ${f.ind.id}`} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            &quot;Robust gap&quot; = at least 1 SD below the county average and in the worst quartile in ≥ 3 of the last 5 years. Survival = age-standardised 5-year relative survival (Finnish Cancer Registry, period method). Specialist waiting data is missing or incomplete for the HUS area (Helsinki excluded: it reports ~0 every year with gaps). {SERIES_NOTES.spec_wait6m}
-          </p>
-        </Card>
+      <section className="rounded-[6px] border border-[var(--accent)] bg-[var(--accent-soft)] p-5">
+        <div className="text-sm font-medium text-[var(--accent)]">Do this first</div>
+        <h2 className="mt-1 text-xl font-semibold">{first.title}</h2>
+        <div className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
+          <div><span className="font-medium">Owner:</span> {first.owner}</div>
+          <div><span className="font-medium">KPI:</span> {first.kpi}</div>
+          {first.impact && <div className="sm:col-span-2"><span className="font-medium">Reach:</span> ≈ {first.impact.perRound.toLocaleString("en-GB")} more people screened per round</div>}
+          {firstPeer && <div className="sm:col-span-2"><span className="font-medium">Learn from:</span> {firstPeer.text}</div>}
+        </div>
+        <p className="mt-2 text-xs text-[var(--muted)]">{DO_FIRST_RULE}</p>
       </section>
 
-      <section>
-        <div className="mb-2 flex items-baseline justify-between">
-          <h2 className="text-lg font-bold">90-day action plan for {c.name} (ranked by gap size and people reached)</h2>
-          <Link href="/actions" className="text-sm text-sky-700 hover:underline print:hidden">Full action library →</Link>
+      <Section title={`90-day plan for ${c.name}`} aside={<Link href="/actions" className="text-sm text-[var(--accent)] hover:underline print:hidden">All actions</Link>}>
+        <div className="rounded-[6px] border border-[var(--line)] bg-white px-4">
+          {s.plan.map((a, i) => <ActionCard key={a.id} a={a} rankNo={i + 1} />)}
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {actions.map((a, i) => <ActionCard key={a.id} a={a} rankNo={i + 1} />)}
-        </div>
-      </section>
+        <p className="mt-2 text-xs text-[var(--muted)]">Ranked by gap size, distance to target and people reached. Open an action to see the 90-day steps, resources and evidence.</p>
+      </Section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <h2 className="text-lg font-bold">AI analyst · 2-minute brief</h2>
-          <p className="mb-3 text-sm text-slate-500">Gemini writes from this page&apos;s data only. Every claim is cited, and every number is checked against the source data automatically.</p>
+      <section className="grid gap-8 lg:grid-cols-2">
+        <div>
+          <h2 className="text-lg font-semibold">Brief for the county board</h2>
+          <p className="mb-3 text-sm text-[var(--muted)]">Gemini writes it from this page&apos;s data only, in English or Finnish, citing a source for every claim. Each number is checked against the source it cites.</p>
           <AnalystPanel county={code} countyName={c.name} />
-        </Card>
-        <Card className="print:hidden">
-          <h2 className="text-lg font-bold">What-if: screening participation</h2>
-          <p className="mb-3 text-sm text-slate-500">Strategy Goal 2 target: 80% participation in every county.</p>
+        </div>
+        <div className="print:hidden">
+          <h2 className="text-lg font-semibold">What if screening reached 80%?</h2>
+          <p className="mb-3 text-sm text-[var(--muted)]">The strategy target is 80% participation in every county.</p>
           <Simulator programmes={programmes} countyName={c.short} />
-          <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm">
-            <div className="font-semibold">Compared with the best county</div>
-            <ul className="mt-1 space-y-0.5 text-slate-700">
-              {["surv_colon", "surv_breast"].map((k) => {
-                const v = value(k, code), r = rank(k, code);
-                return <li key={k}>{findings.find((f) => f.key === k)!.ind.short}: {fmt(v)}% here vs {fmt(r.best?.[1])}% in {r.best ? countyByCode[r.best[0]].short : ""} · Finland {fmt(nationalValue(k))}%</li>;
-              })}
-            </ul>
-          </div>
-        </Card>
+        </div>
       </section>
+
+      <details className="border-t border-[var(--line)] pt-5">
+        <summary className="cursor-pointer text-lg font-semibold">Show all indicators and sources</summary>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="border-b border-[var(--line)] text-left text-xs text-[var(--muted)]">
+                <th className="py-2">Step</th><th>Indicator</th><th className="text-right">{c.short}</th><th className="text-right">Finland</th><th className="text-right">Best</th><th className="text-center">Position</th><th>Trend (dashed: Finland)</th><th>Signal</th><th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {findings.map((f) => {
+                const st = stageMeta(f.ind.stage as never);
+                return (
+                  <tr key={f.key} className="border-b border-[var(--line)] align-middle">
+                    <td className="py-2 text-xs" style={{ color: st.color }}>{st.label}</td>
+                    <td className="max-w-[220px]"><div>{f.ind.short}</div><div className="text-xs text-[var(--muted)]">{f.ind.unit}, {f.year}{f.ind.better === "lower" ? ", lower is better" : ""}</div></td>
+                    <td className="text-right font-medium">{fmt(f.value)}{f.belowTarget && <div className="text-[10px] text-[var(--worse)]">below 80% target</div>}</td>
+                    <td className="text-right">{fmt(f.national)}</td>
+                    <td className="text-right text-[var(--muted)]">{fmt(f.best?.[1])}<div className="text-[10px]">{f.best ? countyByCode[f.best[0]]?.short : ""}</div></td>
+                    <td className="text-center">{f.rank ? `${ordinal(f.rank)} of ${f.of}` : "—"}</td>
+                    <td><Sparkline a={series(f.key, code)} b={nationalSeries(f.key)} better={f.ind.better} /></td>
+                    <td className="text-xs text-[var(--muted)]">
+                      {f.value == null ? (EXCLUDED[f.key]?.[code] ? "Excluded: incomplete HUS reporting" : "No data") :
+                        f.ind.noisy ? "Small numbers" :
+                        f.smallDiff ? "Within normal variation" :
+                        f.signal === "strong" ? <span className="text-[var(--worse)]">Lasting gap ({f.persistence.worstQ} of {f.persistence.years} years in bottom quarter)</span> :
+                        f.signal === "moderate" ? "Possible gap" : "—"}
+                      {f.earlyWarning && <div className="text-[var(--worse)]">Worsening</div>}
+                    </td>
+                    <td><SourceBadge href={f.ind.url} label={`Sotkanet ${f.ind.id}`} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          GP waiting: {SERIES_NOTES.phc_wait7} Specialist waiting: {SERIES_NOTES.spec_wait6m} Survival is age-standardised 5-year relative survival (period method); confidence intervals are not published, so small differences are not scored. <SourceBadge href={THL_2016_URL} label="THL 21/2016" />
+        </p>
+      </details>
     </div>
   );
 }

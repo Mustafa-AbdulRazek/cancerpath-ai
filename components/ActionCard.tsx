@@ -1,53 +1,75 @@
-import type { MatchedAction } from "@/lib/actions";
-import { fmt, stageMeta } from "@/lib/analysis";
-import { Chip } from "./ui";
+import type { Action, MatchedAction } from "@/lib/actions";
+import { countyByCode, fmt, fmtU, stageMeta } from "@/lib/analysis";
 
-export default function ActionCard({ a, rankNo }: { a: MatchedAction | (MatchedAction & { matchedOn: [] }); rankNo?: number }) {
+type Props = { a: Action & Partial<Pick<MatchedAction, "matchedOn" | "impact" | "score">>; rankNo?: number; open?: boolean };
+
+/** Peer benchmark: the best-performing county on the indicator that triggered the action. */
+export function learnFrom(a: Props["a"]) {
+  if (a.learnFrom) return a.learnFrom;
+  const m = a.matchedOn?.find((x) => x.best && x.best[0]);
+  if (!m || !m.best) return undefined;
+  return { text: `${countyByCode[m.best[0]]?.name}: ${m.ind.short.toLowerCase()} ${fmtU(m.best[1], m.ind.unit)}`, url: m.ind.url };
+}
+
+export default function ActionCard({ a, rankNo, open }: Props) {
   const st = stageMeta(a.stage);
+  const peer = learnFrom(a);
   return (
-    <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm break-inside-avoid">
-      <div className="flex items-start gap-2">
-        {rankNo != null && <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">{rankNo}</span>}
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Chip color={st.color}>{st.label}</Chip>
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">{a.level}</span>
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">Effort: {a.effort}</span>
-            <span className="text-[11px] text-slate-400">{a.id}</span>
+    <details open={open} className="group border-b border-[var(--line)] py-3 break-inside-avoid">
+      <summary className="flex cursor-pointer list-none gap-3">
+        {rankNo != null && <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] bg-[var(--ink)] text-xs font-semibold text-white">{rankNo}</span>}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <h3 className="font-semibold leading-snug">{a.title}</h3>
           </div>
-          <h3 className="mt-1 font-semibold leading-snug">{a.title}</h3>
+          <div className="mt-1 grid gap-0.5 text-sm text-[var(--muted)] sm:grid-cols-2">
+            <div><span className="text-[var(--ink)]">Owner:</span> {a.owner}</div>
+            <div><span className="text-[var(--ink)]">KPI:</span> {a.kpi}</div>
+            {a.impact && (
+              <div className="sm:col-span-2">
+                <span className="text-[var(--ink)]">Reach:</span> ≈ {a.impact.perRound.toLocaleString("en-GB")} more people screened per round (≈ {a.impact.perYear.toLocaleString("en-GB")} a year)
+              </div>
+            )}
+            {peer && (
+              <div className="sm:col-span-2">
+                <span className="text-[var(--ink)]">Learn from:</span> {peer.text}
+              </div>
+            )}
+          </div>
+          <div className="mt-1 text-xs text-[var(--muted)]">
+            <span style={{ color: st.color }} className="font-medium">{st.label}</span> · {a.level} · effort {a.effort.toLowerCase()} · roadmap {a.roadmap.join(", ")} · <span className="text-[var(--accent)] group-open:hidden">Show plan</span><span className="hidden text-[var(--accent)] group-open:inline">Hide plan</span>
+          </div>
         </div>
-      </div>
-      {a.matchedOn.length > 0 && (
-        <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-900">
-          <b>Triggered by:</b>{" "}
-          {a.matchedOn.map((m) => `${m.ind.short} ${fmt(m.value)}${m.ind.unit === "%" || m.ind.unit.startsWith("%") ? "%" : ""} (FI ${fmt(m.national)}, rank ${m.rank}/${m.of})`).join(" · ")}
+      </summary>
+      <div className="ml-9 mt-3 space-y-2 text-sm">
+        {a.matchedOn && a.matchedOn.length > 0 && (
+          <p className="text-[var(--muted)]">
+            <span className="text-[var(--ink)]">Why here:</span>{" "}
+            {a.matchedOn.map((m) => `${m.ind.short} ${fmtU(m.value, m.ind.unit)} (Finland ${fmt(m.national)}; ${m.rank} of ${m.of})`).join("; ")}
+          </p>
+        )}
+        <p>{a.what}</p>
+        <div>
+          <div className="font-medium">First 90 days</div>
+          <ol className="ml-5 list-decimal text-[var(--muted)]">
+            {a.first90.map((s) => <li key={s}>{s}</li>)}
+          </ol>
         </div>
-      )}
-      <p className="mt-2 text-sm text-slate-700">{a.what}</p>
-      <div className="mt-2 text-sm">
-        <div className="font-semibold">First 90 days</div>
-        <ol className="ml-4 list-decimal text-slate-700">
-          {a.first90.map((s) => <li key={s}>{s}</li>)}
-        </ol>
+        {a.impact && (
+          <p className="text-xs text-[var(--muted)]">
+            Reach = ({a.impact.target}% − {a.impact.current}%) × {a.impact.pop.toLocaleString("en-GB")} {a.impact.bandLabel} (Statistics Finland {a.impact.popYear}); screened every {a.impact.intervalYears} years. Approximation: eligible population ≈ people invited.
+          </p>
+        )}
+        {a.resources && <p><span className="font-medium">Resources:</span> {a.resources} <span className="text-xs text-[var(--muted)]">(team estimate)</span></p>}
+        <ul className="space-y-0.5 text-xs">
+          {a.evidence.map((e) => (
+            <li key={e.label}><a href={e.url} target="_blank" rel="noreferrer" className="text-[var(--accent)] hover:underline">{e.label}</a></li>
+          ))}
+          {peer?.url && !a.evidence.some((e) => e.url === peer.url) && (
+            <li><a href={peer.url} target="_blank" rel="noreferrer" className="text-[var(--accent)] hover:underline">Benchmark source</a></li>
+          )}
+        </ul>
       </div>
-      {"impact" in a && a.impact && (
-        <div className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-          <b>Impact estimate:</b> ≈ {a.impact.perRound.toLocaleString("en-GB")} more people screened per round (≈ {a.impact.perYear.toLocaleString("en-GB")} per year) if participation rises from {a.impact.current}% to {a.impact.target}%.
-          <div className="text-[11px] text-emerald-800">Eligible group: {a.impact.bandLabel}, {a.impact.pop.toLocaleString("en-GB")} people ({a.impact.popYear}, Statistics Finland), screened every {a.impact.intervalYears} years. Approximation: eligible population ≈ invitees.</div>
-        </div>
-      )}
-      <div className="mt-2 grid gap-1 text-sm">
-        <div><span className="font-semibold">Owner:</span> {a.owner}</div>
-        <div><span className="font-semibold">KPI:</span> {a.kpi}</div>
-        <div><span className="font-semibold">Roadmap actions:</span> {a.roadmap.join(", ")}</div>
-        {a.resources && <div><span className="font-semibold">Resources:</span> {a.resources} <span className="text-xs text-slate-400">(team estimate)</span></div>}
-      </div>
-      <div className="mt-2 space-y-0.5 border-t border-slate-100 pt-2 text-xs">
-        {a.evidence.map((e) => (
-          <a key={e.label} href={e.url} target="_blank" rel="noreferrer" className="block text-sky-800 underline-offset-2 hover:underline">↗ {e.label}</a>
-        ))}
-      </div>
-    </div>
+    </details>
   );
 }

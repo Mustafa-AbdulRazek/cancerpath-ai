@@ -48,3 +48,6 @@ next-env.d.ts
 
 # personal team notes
 /arabic-guide/
+
+# third-party documents (not MIT)
+/Junction_2026_Participant_Guidebook.pdf

@@ -41,27 +41,11 @@ function norm(n: string) {
   return parseFloat(n.replace(",", "."));
 }
 
-/** Hallucination guard: every number in the answer must appear in the grounded context. */
-function verifyNumbers(answer: string, context: string) {
-  const ctx = new Set(numbersIn(context).map(norm));
-  const ctxVals = [...ctx];
-  const unverified: string[] = [];
-  for (const n of numbersIn(answer)) {
-    const v = norm(n);
-    if (Number.isNaN(v) || v <= 10) continue; // small counts ("3 actions", "90 days" checked below)
-    if (ctx.has(v)) continue;
-    if (ctxVals.some((c) => Math.abs(c - v) < 0.051)) continue;
-    if ([14, 30, 48, 80, 90].includes(v)) continue; // fixed KPI targets in the action library
-    unverified.push(n);
-  }
-  return [...new Set(unverified)];
-}
-
 async function callGemini(system: string, contents: { role: string; parts: { text: string }[] }[]) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { text: null as string | null, model: null as string | null, error: "GEMINI_API_KEY not set" };
   // Fallback chain: if a model is overloaded (503/429) or slow, try the next one so the live demo never stalls.
-  const models = [process.env.GEMINI_MODEL, "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"].filter(Boolean) as string[];
+  const models = [process.env.GEMINI_MODEL, "gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-flash-lite-latest"].filter(Boolean) as string[];
   let lastErr = "";
   for (const model of models) {
     try {
@@ -116,10 +100,14 @@ function fallbackBrief(code: string) {
     ...ctx.actions.slice(0, 3).map((a) => `- ${a.title}. Owner: ${a.owner}. KPI: ${a.kpi} [${a.id}]`),
     ``,
     `**What we cannot see yet**`,
-    `- Time from referral to treatment is not available in national open data by county, so the strategy's "treatment within target times" indicator cannot be monitored yet [D1][D8].`,
-    `- Stage at diagnosis is recorded for only about 40% of cases [D3].`,
+    `- Referral-to-treatment times are not published by county and cancer type; nationally only the count over the 180-day limit is reported [D10].`,
+    `- Stage at diagnosis is recorded for 42% of new cancers nationally (Pirkanmaa 72%) [D3].`,
   ].join("\n");
 }
+
+// Brief cache (per warm serverless instance): same county + language within 6 h returns instantly.
+const briefCache = new Map<string, { at: number; payload: unknown }>();
+const CACHE_MS = 6 * 60 * 60 * 1000;
 
 export async function POST(req: Request) {
   const body = (await req.json()) as Body;
@@ -142,6 +130,10 @@ export async function POST(req: Request) {
   sources.push(...nat.sources);
   const context = parts.join("\n\n");
 
+  const cacheKey = mode === "brief" && code ? `${code}:${lang}` : "";
+  const hit = cacheKey ? briefCache.get(cacheKey) : undefined;
+  if (hit && Date.now() - hit.at < CACHE_MS) return NextResponse.json({ ...(hit.payload as object), cached: true });
+
   const task = mode === "brief" ? BRIEF_TASK(lang) : `Question: ${body.question || ""}\nAnswer in ${lang === "fi" ? "Finnish" : "English"} in at most 180 words, with citations.`;
   const contents = [
     ...(body.history || []).slice(-6).map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
@@ -161,11 +153,50 @@ export async function POST(req: Request) {
   for (const m of text.match(/\[([^\]]+)\]/g) || []) for (const id of m.slice(1, -1).split(/[,;\s]+/)) if (/^[SDAPE]\d+[mf]?$/.test(id)) cited.push(id);
   const uniq = [...new Set(cited)];
   const byId = new Map(sources.map((s) => [s.id, s]));
-  return NextResponse.json({
+  const check = tiedNumberCheck(text, context);
+  const payload = {
     text,
     engine,
     error: ai.error,
     citations: uniq.map((id) => byId.get(id) || { id, label: "Unknown source ID (flagged)", url: "" }),
-    unverifiedNumbers: verifyNumbers(text, context),
-  });
+    numberCheck: check,
+    unverifiedNumbers: check.untied,
+  };
+  if (cacheKey && engine !== "rule-based fallback") briefCache.set(cacheKey, { at: Date.now(), payload });
+  return NextResponse.json(payload);
+}
+
+/**
+ * Citation-tied number check: every number in a cited sentence must appear in the context lines of the source IDs that
+ * sentence cites. Numbers in sentences without a citation are checked against the whole context and reported as "uncited".
+ */
+function tiedNumberCheck(answer: string, context: string) {
+  const ID = /\[([A-Z]\d+[a-z]?(?:[,;\s]+[A-Z]\d+[a-z]?)*)\]/g;
+  const NUM = /\d+(?:[.,]\d+)?/g;
+  const numsOf = (text: string) => (text.replace(ID, " ").match(NUM) || []).map(norm);
+  const idNums = new Map<string, number[]>();
+  for (const line of context.split("\n")) {
+    const ids = [...line.matchAll(ID)].flatMap((m) => m[1].split(/[,;\s]+/));
+    const nums = numsOf(line);
+    for (const id of ids) idNums.set(id, [...(idNums.get(id) || []), ...nums]);
+  }
+  const all = numsOf(context);
+  const near = (v: number, set: number[]) => set.some((c) => Math.abs(c - v) < 0.051);
+  let tied = 0;
+  let total = 0;
+  const untied: string[] = [];
+  // split the answer into segments that end with a citation group (or a line break)
+  const segments = answer.replace(/\r/g, "").split(/(?<=\])\s*(?=[^\[\s,.;])|\n/);
+  for (const seg of segments) {
+    const ids = [...seg.matchAll(ID)].flatMap((m) => m[1].split(/[,;\s]+/));
+    const nums = (seg.replace(ID, " ").match(NUM) || []).filter((n) => !(Number.isInteger(norm(n)) && norm(n) <= 3));
+    if (!nums.length) continue;
+    const pool = ids.length ? ids.flatMap((id) => idNums.get(id) || []) : all;
+    for (const n of nums) {
+      total++;
+      if (near(norm(n), pool)) tied++;
+      else untied.push(n + (ids.length ? "" : " (uncited)"));
+    }
+  }
+  return { tied, total, untied: [...new Set(untied)] };
 }

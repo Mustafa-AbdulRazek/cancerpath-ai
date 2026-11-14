@@ -1,18 +1,36 @@
 @import "tailwindcss";
 
-:root { color-scheme: light; }
-body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+:root {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #111827;
+  --muted: #4b5563;
+  --line: #e3e6ea;
+  --accent: #0b4f9c;
+  --accent-soft: #e8f0fa;
+  --worse: #b42318;
+  --better: #0f766e;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+
+h1, h2, h3 { letter-spacing: -0.01em; }
+
+details > summary::-webkit-details-marker { display: none; }
+
+.print-only { display: none; }
 
 @media print {
   header, footer, .print\:hidden { display: none !important; }
   body { background: white; }
-}
-
-.print-only { display: none; }
-@media print {
   body.print-brief * { visibility: hidden; }
   body.print-brief #brief-print, body.print-brief #brief-print * { visibility: visible; }
   body.print-brief #brief-print { position: absolute; left: 0; top: 0; width: 100%; border: none; background: white; padding: 24px; }
   body.print-brief .print-only { display: block; }
-  body.print-brief details { display: block; }
 }

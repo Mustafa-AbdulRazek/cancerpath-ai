@@ -15,6 +15,7 @@ export type Action = {
   effort: "Low" | "Medium" | "High";
   roadmap: string[]; // National cancer strategy roadmap 2026–2031 action IDs
   resources?: string; // team estimate, not a costed budget
+  learnFrom?: { text: string; url?: string }; // fixed peer benchmark when it cannot be computed from the data
   evidence: Evidence[];
 };
 
@@ -23,16 +24,18 @@ export const ROADMAP_URL = "https://files.hackjunction.app/resources/Kansallinen
 export const STRATEGY_EN_URL = "https://www.iccp-portal.org/sites/default/files/2026-02/National_Cancer_Strategy_2026-2035_Finland.pdf";
 export const THL_2016_URL = "https://core.ac.uk/download/78470017.pdf";
 
+export const SYOPA2024_URL = "https://www.verkkouutiset.fi/a/syopatiedoissa-isot-alueelliset-erot-yksi-seutu-erottuu/";
+
 export const ACTIONS: Action[] = [
   {
     id: "A1",
     resources: "Kits and analysis through the existing screening laboratory; ~0.2 FTE coordinator for 3 months",
-    title: "Mail HPV self-sampling kits to cervical screening non-attenders",
+    title: "Mail HPV self-sampling kits to women who still have not attended after the reminder letter",
     stage: "detection",
     level: "Wellbeing services county",
     triggers: ["screen_cervical"],
     why: "Cervical screening participation is below the strategy's 80% target in this county.",
-    what: "Women who do not attend after the invitation and reminder receive an HPV self-sampling kit by post, so non-attenders can test at home.",
+    what: "Keep the reminder letter as the first reminder. Women who still have not attended then receive an HPV self-sampling kit by post as a second reminder, so they can test at home. A Finnish cost analysis found this order the most cost-effective.",
     first90: [
       "Pull the list of last-round non-attenders from the screening register",
       "Procure validated self-sampling kits through the existing screening laboratory contract",
@@ -45,6 +48,7 @@ export const ACTIONS: Action[] = [
     evidence: [
       { label: "Arbyn et al. BMJ 2018: self-sampling increases participation among under-screened women (meta-analysis)", url: "https://doi.org/10.1136/bmj.k4823" },
       { label: "Virtanen et al. Int J Cancer 2011: Finnish trial of self-sampling vs reminder letter for non-attenders", url: "https://pubmed.ncbi.nlm.nih.gov/20669228/" },
+      { label: "Virtanen, Anttila, Nieminen. BMC Women's Health 2015: a letter works best as the first reminder, self-sampling as the second", url: "https://pubmed.ncbi.nlm.nih.gov/26542953/" },
     ],
   },
   {
@@ -164,14 +168,16 @@ export const ACTIONS: Action[] = [
   },
   {
     id: "A7",
+    learnFrom: { text: "Pirkanmaa: Finland's most complete cancer data (stage recorded for 72% of new cancers vs 42% nationally, Syöpä 2024)", url: SYOPA2024_URL },
     resources: "~0.5 FTE analyst for 3 months using existing patient-record data; no new IT system",
     title: "Start measuring time-to-treatment now using THL's 2016 definitions",
     stage: "treatment",
     level: "Wellbeing services county",
     triggers: ["__always__"],
-    why: "No public county-level data exists on how long patients wait from referral to cancer treatment, so the strategy's 'treatment within target times' indicator cannot yet be monitored.",
+    why: "Waiting times from referral to treatment are not published by county and cancer type against the THL targets. Nationally only the number of patients over the 180-day legal limit is reported (about 600–700, under 2%, in 2024), so the strategy's 'treatment within target times' indicator cannot be followed county by county.",
     what: "Every month, compute referral received → first treatment per cancer type from the county's own patient-record data, using the THL 21/2016 definitions, and publish it next to the national target times.",
     first90: [
+      "Validate referral and first-treatment dates in the county's records first (Hilmo covers ~92% of Cancer Registry patients, but these dates have not been validated)",
       "Extract referral-arrival dates, diagnosis codes (C00–C97) and first-treatment procedures from the county's patient records",
       "Apply the THL 21/2016 definitions and calculate the median days and the share treated within target",
       "Share the monthly report with the YTA area and FICAN",
@@ -182,6 +188,8 @@ export const ACTIONS: Action[] = [
     roadmap: ["3.1.2", "3.1.4", "3.2"],
     evidence: [
       { label: "THL Ohjaus 21/2016: Hoitoonpääsyn seuranta syövän hoidossa (definitions + target times)", url: THL_2016_URL },
+      { label: "Järvelin et al. Lääkärilehti 2019: Hilmo vs Cancer Registry; referral and first-treatment dates still need validation", url: "https://www.laakarilehti.fi/tieteessa/alkuperaistutkimukset/kohti-luotettavaa-syovan-hoitoon-paasyn-seurantaa-hilmon-ja-syoparekisterin-diagnoositietojen-vertailu/" },
+      { label: "IHE Cancer Dashboard Finland 2026: ~600–700 patients (under 2%) exceeded the 180-day limit in 2024; county statistics group all cancers together", url: "https://ihe.se/app/uploads/2026/04/IHE-Cancer-Dashboard-Finland_.pdf" },
       { label: "National Cancer Strategy p. 5 + 33: 'patients get treatment within target times' (Goal 3 indicator)", url: STRATEGY_URL },
     ],
   },
@@ -276,6 +284,30 @@ export const ACTIONS: Action[] = [
       { label: "Implementation roadmap p. 13: regional inequality and distance to treatment", url: ROADMAP_URL },
     ],
   },
+  {
+    id: "A12",
+    resources: "Structured stage field in pathology and oncology templates; ~0.3 FTE registry nurse for 3 months",
+    learnFrom: { text: "Pirkanmaa: stage recorded for 72% of new cancers vs 42% nationally (Syöpä 2024)", url: SYOPA2024_URL },
+    title: "Raise stage-at-diagnosis recording to 70% by copying Pirkanmaa's practice",
+    stage: "treatment",
+    level: "Wellbeing services county",
+    triggers: ["__always__"],
+    why: "Stage at diagnosis is recorded for only 42% of new cancers nationally (33–42% in most areas), so the strategy's goal of 70% diagnosed at stage I–II cannot be monitored.",
+    what: "Make stage a required structured field in the clinical cancer notification and send notifications to the Cancer Registry automatically, learning from Pirkanmaa.",
+    first90: [
+      "Peer visit: ask Pirkanmaa's cancer centre how it reached 72%",
+      "Add a required structured stage field to the pathology and oncology templates",
+      "Report the monthly share of new cancers with stage recorded",
+    ],
+    owner: "County chief medical officer + pathology and oncology leads",
+    kpi: "≥ 70% of new cancers with stage recorded (Cancer Registry target)",
+    effort: "Low",
+    roadmap: ["3.1.4", "3.2"],
+    evidence: [
+      { label: "Syöpä 2024 report via Verkkouutiset (17.6.2026): stage recorded for 42% nationally, Pirkanmaa 72%, target ≥ 70%", url: SYOPA2024_URL },
+      { label: "National Cancer Strategy p. 30 and 36: clinical cancer notifications to cover 90% automatically by 2030", url: STRATEGY_URL },
+    ],
+  },
 ];
 
 export type MatchedAction = Action & { score: number; matchedOn: IndicatorFinding[]; impact?: ReturnType<typeof screeningImpact> };
@@ -287,7 +319,7 @@ export function actionsFor(code: string, limit = 4): MatchedAction[] {
   const out: MatchedAction[] = [];
   for (const a of ACTIONS) {
     if (a.triggers.includes("__always__")) {
-      out.push({ ...a, score: 0.75, matchedOn: [] });
+      out.push({ ...a, score: a.id === "A7" ? 0.75 : 0.5, matchedOn: [] });
       continue;
     }
     const matched = a.triggers.map((k) => byKey[k]).filter((x) => x && (x.signal !== "none" || x.belowTarget || x.earlyWarning));
@@ -300,12 +332,12 @@ export function actionsFor(code: string, limit = 4): MatchedAction[] {
     const impactBonus = impact ? Math.min(1, impact.perRound / 4000) : 0;
     out.push({ ...a, score: score + impactBonus, matchedOn: matched, impact });
   }
-  // Downstream pattern: outcome is the weakest stage while detection is on par, so the gap is likely created in
-  // diagnosis/treatment. Prioritise measuring time-to-treatment and downstream actions over screening actions.
+  // Downstream pattern: outcome is the weakest stage while detection is on par, so the gap is likely created after the
+  // first GP contact (symptom recognition, referral, diagnostics, treatment). Prioritise measuring time-to-treatment and downstream actions over screening actions.
   const weak = weakestStage(code);
   const det = stageScores(code).find((s) => s.stage === "detection")?.score;
   const downstream = !!weak && weak.score < -0.35 && weak.stage === "outcome" && det != null && det >= -0.2;
-  if (downstream) for (const x of out) x.score += x.id === "A7" ? 3 : x.stage === "outcome" || x.stage === "treatment" || x.id === "A6" ? 1 : 0;
+  if (downstream) for (const x of out) x.score += x.id === "A7" ? 3 : x.stage === "outcome" || x.stage === "treatment" || x.id === "A6" || x.id === "A4" ? 1 : 0;
   out.sort((a, b) => b.score - a.score);
   if (downstream) {
     const top = out.slice(0, limit);
@@ -316,3 +348,10 @@ export function actionsFor(code: string, limit = 4): MatchedAction[] {
   const a7 = out.find((x) => x.id === "A7")!;
   return [...gapActions, a7];
 }
+
+
+/** "Do this first": the highest-ranked low-effort action among the top three, otherwise the top action. */
+export function doFirst(plan: MatchedAction[]) {
+  return plan.slice(0, 3).find((x) => x.effort === "Low") ?? plan[0];
+}
+export const DO_FIRST_RULE = "Rule: the highest-ranked low-effort action among the top three (ranked by gap size, distance to target and people reached).";

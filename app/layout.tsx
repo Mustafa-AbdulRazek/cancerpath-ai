@@ -1,39 +1,41 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter", display: "swap" });
+
 export const metadata: Metadata = {
-  title: "CancerPath AI — Equal cancer care across Finland",
-  description: "Locates where each Finnish wellbeing services county's cancer pathway falls behind, and recommends evidence-based actions. Built at Junction 2026 for the AstraZeneca challenge.",
+  title: "CancerPath AI: equal cancer care across Finland",
+  description: "Shows where each Finnish wellbeing services county's cancer pathway falls behind, and what to do about it. Built at Junction 2026 for the AstraZeneca challenge.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur print:hidden">
-          <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3">
-            <Link href="/" className="flex items-center gap-2 font-bold">
-              <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden>
-                <circle cx="6" cy="16" r="4" fill="#d97706" />
-                <circle cx="14" cy="16" r="4" fill="#dc2626" />
-                <circle cx="22" cy="16" r="4" fill="#7c3aed" />
-                <circle cx="29" cy="16" r="3" fill="#0f766e" />
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className="min-h-screen antialiased">
+        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white print:hidden">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3">
+            <Link href="/" className="flex items-center gap-2 font-semibold">
+              <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden>
+                <path d="M3 16h26" stroke="#c7cdd4" strokeWidth="2" />
+                <circle cx="5" cy="16" r="4" fill="#475569" />
+                <circle cx="12.5" cy="16" r="4" fill="#4338ca" />
+                <circle cx="20" cy="16" r="4" fill="#7e22ce" />
+                <circle cx="27" cy="16" r="4" fill="#92400e" />
               </svg>
-              CancerPath <span className="text-sky-700">AI</span>
+              CancerPath AI
             </Link>
-            <nav className="flex gap-4 text-sm text-slate-600">
-              <Link href="/" className="hover:text-slate-900">Finland</Link>
-              <Link href="/actions" className="hover:text-slate-900">Action library</Link>
-              <Link href="/analyst" className="hover:text-slate-900">AI analyst</Link>
-              <Link href="/sources" className="hover:text-slate-900">Sources &amp; method</Link>
+            <nav className="flex gap-5 text-sm text-[var(--muted)]">
+              <Link href="/" className="hover:text-[var(--ink)]">Counties</Link>
+              <Link href="/actions" className="hover:text-[var(--ink)]">Action library</Link>
+              <Link href="/sources" className="hover:text-[var(--ink)]">Data &amp; method</Link>
             </nav>
-            <span className="ml-auto hidden text-xs text-slate-500 md:block">Public aggregate data only · No patient data</span>
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
-        <footer className="mx-auto max-w-7xl px-4 pb-8 pt-4 text-xs text-slate-500 print:hidden">
-          CancerPath AI · Junction 2026 · AstraZeneca &quot;Equal Care Across Finland&quot; challenge · Data: THL Sotkanet (CC BY 4.0), Finnish Cancer Registry via Sotkanet, Statistics Finland boundaries (CC BY 4.0) · MIT License
+        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+        <footer className="mx-auto max-w-6xl border-t border-[var(--line)] px-4 py-5 text-xs text-[var(--muted)] print:hidden">
+          Public aggregate data only (THL, Finnish Cancer Registry, Statistics Finland). MIT licence. Built at Junction 2026 for the AstraZeneca challenge. <Link href="/sources" className="underline">Sources and limitations</Link>
         </footer>
       </body>
     </html>

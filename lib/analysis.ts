@@ -47,8 +47,29 @@ export const EXCLUDED: Record<string, Record<string, string>> = {
 };
 for (const [key, codes] of Object.entries(EXCLUDED)) for (const code of Object.keys(codes)) delete data.values[key]?.[code];
 
+/**
+ * GP waiting (6411) swings strongly year to year (e.g. North Karelia 21% → 59%, 2024→2025) because of IT/recording changes
+ * after the 2023 county reform and the relaxed care guarantee. Score it on a rolling 3-year mean instead of one year.
+ */
+function rolling3(s: Record<string, number> | undefined) {
+  if (!s) return s;
+  const out: Record<string, number> = {};
+  for (const y of Object.keys(s).map(Number)) {
+    const w = [y - 2, y - 1, y].map((k) => s[k]).filter((v): v is number => v != null);
+    if (w.length >= 2) out[y] = Math.round((w.reduce((a, b) => a + b, 0) / w.length) * 10) / 10;
+  }
+  return out;
+}
+if (data.values.phc_wait7) {
+  for (const code of Object.keys(data.values.phc_wait7)) data.values.phc_wait7[code] = rolling3(data.values.phc_wait7[code])!;
+  data.national.phc_wait7 = rolling3(data.national.phc_wait7)!;
+  const ind = data.indicators.find((i) => i.key === "phc_wait7");
+  if (ind) { ind.short = "GP wait > 7 days (3-yr avg)"; ind.label = "Non-urgent GP visits waiting > 7 days, rolling 3-year average"; }
+}
+
 /** Known breaks in series that limit trend interpretation. */
 export const SERIES_NOTES: Record<string, string> = {
+  phc_wait7: "County values swing strongly year to year (e.g. North Karelia 21% → 59%, 2024→2025). THL linked the 2023 slowdown to IT and administrative changes after the county reform, monitoring coverage grew from 15 to 21 of 22 counties in 2021–2023, and the legal care guarantee was relaxed. We therefore use a rolling 3-year average.",
   spec_wait6m: "Large jumps around 2022 (e.g. North Karelia 8.1 → 43.2), when wellbeing services counties took over, may partly reflect changes in recording. Compare levels across counties; read trends with care.",
 };
 export const counties = [...data.counties].sort((a, b) => a.short.localeCompare(b.short, "fi"));
@@ -58,10 +79,10 @@ export const indicatorByKey = Object.fromEntries(indicators.map((i) => [i.key, i
 export const countyByCode = Object.fromEntries(data.counties.map((c) => [c.code, c])) as Record<string, County>;
 
 export const STAGES: { key: Stage; label: string; question: string; color: string }[] = [
-  { key: "detection", label: "Detection", question: "Are cancers found early? (screening + access to a GP)", color: "#d97706" },
-  { key: "referral", label: "Referral", question: "Is specialist care congested? (all-specialty capacity proxy)", color: "#dc2626" },
-  { key: "treatment", label: "Diagnosis → Treatment", question: "Does treatment start within target times?", color: "#7c3aed" },
-  { key: "outcome", label: "Outcome", question: "Do patients survive as well as elsewhere in Finland?", color: "#0f766e" },
+  { key: "detection", label: "Detection", question: "Are cancers found early? (screening + access to a GP)", color: "#475569" },
+  { key: "referral", label: "Referral", question: "Is specialist care congested? (all-specialty capacity proxy)", color: "#4338ca" },
+  { key: "treatment", label: "Diagnosis → Treatment", question: "Does treatment start within target times?", color: "#7e22ce" },
+  { key: "outcome", label: "Outcome", question: "Do patients survive as well as elsewhere in Finland?", color: "#92400e" },
 ];
 
 export function latestYear(key: string): number {
@@ -180,7 +201,9 @@ export function findingsFor(code: string): IndicatorFinding[] {
     let signal: IndicatorFinding["signal"] = "none";
     const nat = nationalValue(ind.key, year);
     // Survival: differences within ±2 pp of Finland are likely within statistical noise for most counties.
-    const smallDiff = ind.stage === "outcome" && v != null && nat != null && Math.abs(v - nat) <= 2;
+    // ±2 pp band; ±3 pp for counties under 100,000 people (few cases per year → wider uncertainty, no CIs published).
+    const pop = data.values.population?.[code]?.[latestYear("population")] ?? 1e9;
+    const smallDiff = ind.stage === "outcome" && v != null && nat != null && Math.abs(v - nat) <= (pop < 100000 ? 3 : 2);
     if (z != null && z <= -1 && (p.worstQ >= 3 || p.years < 3) && !ind.noisy && !smallDiff) signal = "strong";
     else if (z != null && z <= -0.5) signal = "moderate";
     const earlyWarning = !!t && !t.improving && Math.abs(t.delta) >= (ind.unit.startsWith("%") ? 5 : ind.key === "spec_wait6m" ? 15 : 9999);
@@ -194,7 +217,8 @@ export function stageScores(code: string): StageScore[] {
   const f = findingsFor(code);
   return STAGES.map(({ key }) => {
     const fs = f.filter((x) => x.ind.stage === key);
-    const zs = fs.filter((x) => x.z != null && !x.ind.noisy).map((x) => x.z!) as number[];
+    // Differences inside the survival noise band count as "on par" (z = 0), so they cannot make a stage look behind.
+    const zs = fs.filter((x) => x.z != null && !x.ind.noisy).map((x) => (x.smallDiff ? 0 : x.z!));
     return { stage: key, findings: fs, hasData: zs.length > 0, score: zs.length ? mean(zs) : undefined };
   });
 }
@@ -260,4 +284,41 @@ export function screeningImpact(key: string, code: string, target = 80) {
   const meta = data.eligibleMeta.bands[band];
   const perRound = Math.round((pop * (target - v)) / 100);
   return { perRound, perYear: Math.round(perRound / meta.intervalYears), pop, band, bandLabel: meta.label, intervalYears: meta.intervalYears, current: v, target, popYear: data.eligibleMeta.year };
+}
+
+/** Rank of the county's stage score among counties with data (1 = best). */
+export function stageRank(code: string, stage: Stage) {
+  const all = data.counties
+    .map((c) => ({ code: c.code, s: stageScores(c.code).find((x) => x.stage === stage)?.score }))
+    .filter((x): x is { code: string; s: number } => x.s != null)
+    .sort((a, b) => b.s - a.s);
+  const i = all.findIndex((x) => x.code === code);
+  return { rank: i >= 0 ? i + 1 : undefined, of: all.length };
+}
+
+export const UUSIMAA_HUS = ["01", "02", "03", "04", "90"];
+
+/** Correlation excluding a set of counties (robustness check). */
+export function countyCorrelationExcluding(a: string, b: string, exclude: string[]) {
+  const c = countyCorrelation(a, b);
+  const pts = c.pts.filter((p) => !exclude.includes(p.code));
+  const mx = mean(pts.map((p) => p.x)), my = mean(pts.map((p) => p.y));
+  let n = 0, dx = 0, dy = 0;
+  for (const p of pts) { n += (p.x - mx) * (p.y - my); dx += (p.x - mx) ** 2; dy += (p.y - my) ** 2; }
+  return { r: n / Math.sqrt(dx * dy), n: pts.length };
+}
+
+/** Ordinal helper: 1st, 2nd, 3rd, 4th … */
+export function ordinal(n: number) {
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/** Crude estimate of new cancer cases per year: national incidence (strategy p. 6: just under 38,000) × population share. */
+export function cancersPerYear(code: string) {
+  const y = latestYear("population");
+  const pop = value("population", code, y);
+  const nat = nationalValue("population", y);
+  if (!pop || !nat) return undefined;
+  return Math.round((38000 * pop) / nat / 10) * 10;
 }

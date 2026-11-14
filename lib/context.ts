@@ -1,4 +1,4 @@
-import { EXCLUDED, SERIES_NOTES, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
+import { EXCLUDED, SERIES_NOTES, UUSIMAA_HUS, countyCorrelationExcluding, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
 import { actionsFor, STRATEGY_URL, ROADMAP_URL, THL_2016_URL } from "./actions";
 
 export type Source = { id: string; label: string; url: string };
@@ -7,7 +7,10 @@ export type Source = { id: string; label: string; url: string };
 export const DOC_FACTS: { id: string; text: string; source: Source }[] = [
   { id: "D1", text: "Goal 3 of the National Cancer Strategy 2026–2035 is 'Ensure equal and effective cancer care'. Its indicators: 5-year survival of poor-prognosis cancers reaches the Nordic level; cancer mortality falls 10% (currently 13,300 deaths/year); patients get treatment within target times (THL guidance 21/2016).", source: { id: "D1", label: "National Cancer Strategy 2026–2035, p. 5", url: STRATEGY_URL } },
   { id: "D2", text: "Goal 2 indicators: 80% participation in all cancer screening programmes in every wellbeing services county; at least 70% of cancers diagnosed at stage I–II.", source: { id: "D2", label: "National Cancer Strategy 2026–2035, p. 5", url: STRATEGY_URL } },
-  { id: "D3", text: "Clinical cancer registry notifications with stage information cover only about 40% of cancer cases, and data on the time from first symptoms to diagnosis is not collected systematically.", source: { id: "D3", label: "National Cancer Strategy 2026–2035, p. 30", url: STRATEGY_URL } },
+  { id: "D3", text: "Stage at diagnosis is recorded for 42% of new cancers nationally (Pirkanmaa 72%, most other areas 33–42%, target at least 70%), and data on the time from first symptoms to diagnosis is not collected systematically.", source: { id: "D3", label: "Syöpä 2024 report (via Verkkouutiset 17.6.2026) and National Cancer Strategy p. 30", url: "https://www.verkkouutiset.fi/a/syopatiedoissa-isot-alueelliset-erot-yksi-seutu-erottuu/" } },
+  { id: "D10", text: "Referral-to-treatment times are not published by county and cancer type. Nationally, about 600–700 cancer patients (under 2%) exceeded the 180-day treatment limit in 2024; some counties publish waiting statistics for all cancers together.", source: { id: "D10", label: "IHE Cancer Dashboard Finland 2026", url: "https://ihe.se/app/uploads/2026/04/IHE-Cancer-Dashboard-Finland_.pdf" } },
+  { id: "D11", text: "In a 2025 survey of 684 cancer patients, a third needed at least three healthcare contacts before diagnosis.", source: { id: "D11", label: "Suomen Syöpäpotilaat survey, 12.3.2025", url: "https://www.sttinfo.fi/tiedote/70972938/kyselyselvitys-joka-kolmas-syopapotilas-kokee-diagnoosin-viivastyneen?publisherId=69820264" } },
+  { id: "D12", text: "Individual-level screening gaps: breast screening 82% among women with Finnish, Swedish or Sami mother tongue vs 63% for others (2020–21); cervical screening 73% among women born in Finland, 62% born elsewhere in Europe, 46% born in Africa (2019–23).", source: { id: "D12", label: "IHE 2026; Finnish Cancer Registry study 9.11.2026", url: "https://www.sttinfo.fi/tiedote/72484607/tutkimus-kohdunkaulasyovan-seulonta-ei-tavoita-kaikkia-naisia-yhta-hyvin?publisherId=69820264" } },
   { id: "D4", text: "Finland has no unified national system that steers cancer-specific guidelines, care pathways and their monitoring (including access-to-care targets); this maintains regional inequality.", source: { id: "D4", label: "National Cancer Strategy 2026–2035, p. 33", url: STRATEGY_URL } },
   { id: "D5", text: "A national cancer quality registry does not yet exist; regional comparisons are occasional and based on coarse, fragmented measures.", source: { id: "D5", label: "National Cancer Strategy 2026–2035, p. 35", url: STRATEGY_URL } },
   { id: "D6", text: "Roadmap action 2.5.2: standardised referral criteria modelled on Denmark's Kræftpakkeforløb, Sweden's SVF and Norway's Pakkeforløp; criteria for the 5 most common cancers by 2026–2028. Action 3.1.2: national care-pathway descriptions and cancer-specific access-time targets for five cancers by 2028. Action 3.1.4: national quality indicators.", source: { id: "D6", label: "Implementation roadmap 2026–2031, p. 52–58", url: ROADMAP_URL } },
@@ -70,7 +73,8 @@ export function nationalContext() {
   const sources: Source[] = [];
   EQUITY_PAIRS.forEach((e, i) => {
     const r = countyCorrelation(e.a, e.b);
-    lines.push(`[E${i + 1}] Equity (ecological, county-level, not causal): ${e.text}: correlation r = ${r.r.toFixed(2)} across ${r.n} areas.`);
+    const rx = countyCorrelationExcluding(e.a, e.b, UUSIMAA_HUS);
+    lines.push(`[E${i + 1}] Equity (ecological, county-level, not causal): ${e.text}: correlation r = ${r.r.toFixed(2)} across ${r.n} areas; without Uusimaa and Helsinki r = ${rx.r.toFixed(2)} (mostly a capital-region pattern).`);
     sources.push({ id: `E${i + 1}`, label: `CancerPath AI county-level correlation: ${e.text}`, url: "https://cancerpath-ai.vercel.app/" });
   });
   lines.push(`[S3336] Note on specialist waiting: ${SERIES_NOTES.spec_wait6m} HUS-area data is missing or incomplete; Helsinki is excluded.`);
