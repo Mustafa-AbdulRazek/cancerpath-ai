@@ -3,7 +3,7 @@
 **Project name (≤30):** CancerPath AI
 
 **Punchline (≤200):**
-Shows every Finnish wellbeing services county where its cancer pathway falls behind (detection, referral, treatment or outcome) and turns it into a sourced, Goal 3-aligned 90-day action plan.
+Shows every Finnish wellbeing services county where its cancer pathway falls behind, and what to do about it: a sourced, Goal 3-aligned 90-day plan with owners, KPIs and people reached.
 
 **Challenge:** AstraZeneca – Equal Care Across Finland
 **Tech challenge:** Google DeepMind – Best Use of Gemini API
@@ -11,44 +11,32 @@ Shows every Finnish wellbeing services county where its cancer pathway falls beh
 **Description (≤5000, markdown):**
 
 ## The problem
-Finland's National Cancer Strategy 2026–2035 sets Goal 3: *equal and effective cancer care*, with patients treated within target times wherever they live. But a county decision-maker cannot see **where** in the pathway their patients lose time. Time from referral to treatment is not in national open data for any county, stage at diagnosis is recorded for only ~40% of cancers (strategy p.30), and regional comparisons are "occasional and based on coarse measures" (p.35).
+Goal 3 of Finland's National Cancer Strategy 2026–2035 promises equal outcomes and treatment within target times, wherever you live. But no county can see where in the pathway its patients lose time. Referral-to-treatment times are not published by county and cancer type; nationally only the number of patients over the 180-day legal limit is reported (about 600–700, under 2%, in 2024). Stage at diagnosis is recorded for only 42% of new cancers (72% in Pirkanmaa).
 
 ## What we built
-**CancerPath AI** combines open THL Sotkanet and Finnish Cancer Registry indicators for all 21 wellbeing services counties plus Helsinki, and maps them onto the cancer pathway:
+**CancerPath AI** covers all 21 wellbeing services counties and Helsinki, using public THL Sotkanet, Finnish Cancer Registry and Statistics Finland data. It follows one path: **pick a county → see where its pathway falls behind → see what to do → take the brief away.**
 
-1. **Detection:** breast, cervical and colorectal screening participation vs the strategy's 80% target; GP access (non-urgent visits waiting > 7 days)
-2. **Referral:** people waiting > 6 months for specialist care
-3. **Diagnosis → Treatment:** no public data. We show this blind spot and how to close it.
-4. **Outcome:** 5-year relative survival (colon, breast, cervical)
+- **Pathway view:** detection (screening, GP access), referral (specialist queue, a proxy), diagnosis → treatment (not publicly measured, shown as a gap), outcome (5-year survival). It shows where the county falls behind, as a plain rank ("21st of 22").
+- **90-day plan:** 5 ranked actions per county, plus a "Do this first" pick with its rule shown. Each action has an owner, first 90 days, KPI, people reached, resources, a county to **learn from**, the **national roadmap action** it delivers (2.5.2, 3.1.2, 3.1.4, 3.2…) and peer-reviewed or official evidence.
+- **National recommendations:** a suspected-cancer flag in the national eReferral; publishing referral-to-treatment times by county and cancer type (THL 21/2016 definitions); stage recording as a quality indicator (target 70%).
+- **Pilot proposal:** 90 days in one county (Pirkanmaa first, then Päijät-Häme), modelled on AstraZeneca Finland's 2025 kidney-disease screening pilot.
 
-Goal 3 means equal outcomes, so we start from unequal **survival** and trace it back to the pathway stage where the gap is likely created. It separates **robust gaps** (persistently in the worst quartile) from noise, and flags **early warnings** (fast deterioration).
+## What it reveals (all sourced)
+- **Outcomes first:** colon cancer 5-year survival differs by 11 points between counties (63–74%), breast cancer by only 5. In Päijät-Häme it fell from 70% to 63% (2019→2024) while Finland rose to 68%. A third of patients needed 3+ contacts before diagnosis (2025 survey), so the gap is likely created after the first GP contact: symptom recognition, referral, diagnostics.
+- **Referral congestion:** 99 per 10,000 waited over 6 months for specialist care in North Karelia vs 36 for Finland (all specialties, used as a proxy).
+- **Who screening misses:** breast screening 82% among native speakers vs 63% for other mother tongues; cervical screening 73% for women born in Finland vs 46% for women born in Africa. These figures confirm the county-level pattern in the capital region.
+- **Reach:** e.g. ≈ 5,000 more women screened per round in Päijät-Häme if cervical screening reached 80% (Statistics Finland age-group populations).
 
-## Insights it reveals (all sourced)
-- **Survival first:** Päijät-Häme has Finland's **fastest GP access** yet the **lowest colon cancer survival (70% → 63%, 2019→2024)**, while Vantaa–Kerava has the slowest GP access but top-3 survival. GP access alone does not explain survival: the gap is likely created downstream, in diagnosis and treatment, the stage nobody measures. (Survival is a period estimate; we present it as a sustained decline to explain.)
-- More than half of non-urgent GP visits now wait > 7 days (**38.3% → 54.7%**, 2021→2025). Part of this reflects the relaxed legal care guarantee, which we flag transparently.
-- People waiting > 6 months for specialist care (all specialties, a congestion proxy): **99 per 10,000 in North Karelia vs 36 for Finland** (2025). HUS-area data is incomplete, so Helsinki is excluded and those areas are hatched on the map.
-- **Equity:** breast screening participation is strongly lower where the share of foreign citizens is higher (**r = −0.81**, 22 areas), so the screening gap sits in diverse urban areas.
-- Colorectal screening is below 80% in **all 22 areas**, and cervical screening in 20 of 22. Men participate in colorectal screening far less than women (**69.2% vs 77.7%**).
-- Colon cancer 5-year survival ranges from **63% to 74%** between counties.
+## Built to be trusted
+- A source link on every number, a reproducible data pipeline (`npm run data`) and a limitations page.
+- Honest data handling. Helsinki's incomplete specialist-waiting data is excluded, and missing data is hatched on the map. GP waiting uses a 3-year average because recording changed. Small survival differences (within ±2 points, ±3 for small counties) are never scored. County-level correlations carry a robustness check.
+- Public aggregate data only, no patient data.
 
-## Actionability
-Every county gets a ranked **90-day action plan**, ranked by gap size and **people reached** (e.g. North Karelia: ≈ 4,000 more women screened per round with HPV self-sampling; Helsinki: ≈ 6,700 more people in colorectal screening per round, using Statistics Finland age-group populations). Each action also has a resource line (team estimate). Each action names the **owner** (e.g. county screening coordinator, primary care chief physician, YTA university hospital), **first three steps**, a **KPI**, the **National Cancer Strategy roadmap action** it implements (2.5.1, 2.5.2, 3.1.2, 3.1.4, 3.2…), and **evidence**. Examples:
-- HPV self-sampling kits for screening non-attenders (Finnish RCT, BMJ meta-analysis)
-- Standardised "suspected cancer" referral with direct access to diagnostics, on the Danish/Swedish/Norwegian pathway model the roadmap itself recommends
-- Primary-care red-flag fast lane, nurse navigators, FIT triage, regional MDT audits
-- **Start measuring time-to-treatment in 90 days** with the county's own data and THL 21/2016 definitions, which unlocks the Goal 3 "within target times" indicator
-
-## AI that a decision-maker can trust
-A **Google Gemini** analyst writes a **2-minute decision brief** (English or Finnish) and answers questions. It receives only cited facts (indicator data plus the strategy and roadmap pages), must cite a source for every sentence, and is **post-checked automatically**: any number not found in the source data is flagged. If the AI is unavailable, a rule-based brief keeps the demo working.
-
-## Data quality & transparency
-Source badge on every number · indicator metadata links · reproducible ETL (`npm run data`) · dedicated limitations page (e.g. waiting data covers all specialties, small-county survival uncertainty, no causal claims) · public aggregate data only, no patient data.
+## AI (Gemini)
+Gemini writes a 2-minute board brief, in Finnish or English, and answers questions. It sees only cited facts: the county data, the strategy and roadmap pages, and verified reports. Every sentence must cite a source. A **citation-tied number check** confirms that each number appears in the source it cites (e.g. "16/16 numbers tied"). Briefs are cached for a fast demo. A rule-based one-page brief works without AI.
 
 ## Tech
-Next.js 15, TypeScript, Tailwind, d3-geo SVG map, Google Gemini API (gemini-3.5-flash with lite fallbacks), THL Sotkanet REST API, Statistics Finland boundaries. MIT licensed.
-
-## How we used Gemini (tech challenge)
-Gemini generates grounded county decision briefs and Q&A in English and Finnish from a structured, cited context. We add citation enforcement, a numeric hallucination check and a deterministic fallback.
+Next.js 15, TypeScript, Tailwind, d3-geo SVG map, Google Gemini API (gemini-3.1-flash-lite with fallbacks), THL Sotkanet REST API, Statistics Finland PxWeb API. MIT licensed.
 
 **Source code:** https://github.com/Mustafa-AbdulRazek/cancerpath-ai
 **Demo:** https://cancerpath-ai.vercel.app

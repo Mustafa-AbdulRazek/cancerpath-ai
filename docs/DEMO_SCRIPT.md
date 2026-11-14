@@ -1,19 +1,36 @@
-# Live demo for the AstraZeneca judges (Sun 14:00): 5 minutes
+# Pitch pack: three versions + hard questions
 
-Before: open https://cancerpath-ai.vercel.app on the laptop, zoom 110%, preload /county/09 and /county/14 in a 2nd tab, generate the Finnish brief once (warms the AI).
+**Before any pitch:** open https://cancerpath-ai.vercel.app on the laptop. At 13:50, generate the English and Finnish briefs for Päijät-Häme (/county/09) and North Karelia (/county/14) so they load from the cache. Keep a screen recording of the full demo on the laptop as an offline backup, plus a phone hotspot.
 
-1. **(30 s) Open with a person:** "A 60-year-old in Lahti sees a GP faster than anyone in Finland, yet Päijät-Häme has the lowest colon cancer survival (70→63%). Why?" (paradox card)
-2. **(45 s) Survival first:** "Goal 3 = equal outcomes. We start from unequal survival and trace it to the step where it is created." Show the equity card (r = −0.81, ecological) and the referral card (North Karelia 99 vs Finland 36; HUS data incomplete).
-3. **(45 s) Where the gap emerges:** map (hatched = incomplete data) → click Päijät-Häme → "detection fine → gap created downstream", then the grey "No public data" treatment stage. Optionally show North Karelia for a referral-stage contrast.
-4. **(30 s) Trust:** evidence table → "Robust gap 3/5 years" + click one source badge → Sotkanet metadata opens.
-5. **(60 s) Actionability (30% of the score):** walk through action #1: owner, first 90 days, KPI, roadmap 2.5.2/3.1.2, Danish evidence. Mention A7: start measuring time-to-treatment in 90 days.
-6. **(45 s) AI:** "Generate brief" in Suomi → show citations and "✓ every number matches the source data".
-7. **(25 s) Close:** "We propose a 90-day pilot with one wellbeing services county, ideally with AstraZeneca as a follow-up project."
+## A. 90-second table pitch (peer review, non-experts)
+1. (15 s) "A third of Finnish cancer patients needed three or more visits before diagnosis, and no county can see where the time goes."
+2. (45 s) Pick a county → pathway strip → "the gap emerges here" → "Do this first" → open one action (owner, KPI, people reached, who to learn from).
+3. (20 s) "Gemini writes the board brief in Finnish, and every number is checked against its cited source." Click "Download 1-page brief".
+4. (10 s) "It works for all 22 counties today, on public data. Next: a 90-day pilot with one county."
 
-Likely questions:
-- *Why not use the Cancer Registry stage data?* Only ~40% coverage (strategy p.30). We show it as a limitation instead of over-claiming.
-- *Is Helsinki's near-zero specialist wait real?* No. It reports ~0 every year with gaps, and the rest of HUS reports nothing, so we exclude it as incomplete reporting and hatch those areas on the map.
-- *Is the Päijät-Häme decline real?* Survival is a period estimate over overlapping windows, so we present it as a sustained decline to explain, not six independent points.
-- *Is specialist waiting cancer-specific?* No, it covers all specialties (stated on the limitations page). That is exactly why we propose the suspected-cancer flag and A7.
-- *Causality?* We present hypotheses for the county to verify, not causes.
-- *Cost?* Effort tier per action; most of the first steps reuse existing systems (referral system, screening register).
+## B. 2:45 stage pitch (top 5; the mic is cut at 3:00)
+- 0:00 Hook: survey (a third needed 3+ visits) + Päijät-Häme colon survival 70→63% while Finland rose.
+- 0:25 Problem: Goal 3 promises treatment within target times, but nobody publishes those times by county and cancer type; stage is recorded for only 42% of cancers (72% in Pirkanmaa).
+- 0:50 Demo: map → Päijät-Häme → pathway → do-first → plan.
+- 1:50 Trust: source on every number, tied-number check, limitations page.
+- 2:15 Impact: e.g. ≈ 5,000 more women screened per round in Päijät-Häme if cervical screening reached 80%. National recommendations.
+- 2:35 Ask: 90-day pilot (Pirkanmaa → Päijät-Häme).
+
+## C. 5-minute AstraZeneca demo
+1. (30 s) Hook as above.
+2. (45 s) Goal 3 framing: equal outcomes. Colon survival differs by 11 points between counties, breast by 5. Show finding 2 (no county-level treatment times) and finding 3 (screening misses women born abroad).
+3. (60 s) Päijät-Häme page: on-par detection, behind outcome → gap after the first GP contact. Contrast with North Karelia (referral step).
+4. (60 s) Actionability: "Do this first", open A7 (validate dates first, Hilmo), A6, and a screening action with reach and "learn from".
+5. (40 s) Trust: open "Show all indicators", the hatched HUS area on the map, and /sources.
+6. (40 s) AI: Finnish brief from the cache, "16/16 numbers tied to their cited source", then the printable brief.
+7. (25 s) Close: national recommendations + pilot modelled on AstraZeneca's own 2025 kidney-disease pilot with Pirkanmaa.
+
+## Hard questions
+- **"Doesn't THL already publish cancer waits?"** Nationally it reports how many patients exceed the 180-day legal limit (about 600–700, under 2%, in 2024; IHE 2026), and some counties publish statistics for all cancers together. What is missing is referral-to-treatment time by county and cancer type against the THL 21/2016 targets.
+- **"Isn't r = −0.81 just Uusimaa?"** Yes, without Uusimaa and Helsinki it drops to about −0.3. That's why we lead with individual-level data: breast screening 82% vs 63% by mother tongue; cervical 73% vs 46% for women born in Africa.
+- **"Is the GP-waiting trend a reporting artefact?"** Partly. Monitoring coverage grew from 15 to 21 counties in 2021–23, the care guarantee was relaxed, and THL linked the 2023 slowdown to IT changes. So we use a 3-year average and don't headline it.
+- **"Is Helsinki's near-zero specialist wait real?"** No. It reports about 0 every year with gaps, so we exclude it and hatch the HUS area on the map.
+- **"Is 63% vs 66% survival real?"** Differences within ±2 points (±3 for counties under 100,000 people) are treated as normal variation and never scored.
+- **"Why should Päijät-Häme believe the plan?"** It starts by measuring, with the county's own data, the step we can't see. The other actions have Nordic or Finnish evidence and a county to learn from.
+- **"What does a pilot cost, and who evaluates it?"** About 0.5 FTE analyst for 3 months using existing records, with no new IT system. Evaluation by a university partner, like AstraZeneca's 2025 kidney-disease pilot (8,248 invited, 4,018 took part).
+- **"Is this AI or a dashboard?"** The analytics engine finds and ranks gaps and actions; Gemini turns them into a cited board brief, with a check that ties each number to its source.
