@@ -3,6 +3,7 @@ import { countyContext, docContext, nationalContext, Source } from "@/lib/contex
 import { countyByCode, fmt, fmtU, stageMeta } from "@/lib/analysis";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 type Body = { mode?: "brief" | "qa"; county?: string; question?: string; lang?: "en" | "fi"; history?: { role: "user" | "model"; text: string }[] };
 
@@ -16,7 +17,12 @@ STRICT RULES:
 5. Correlation is not causation. Phrase possible causes as hypotheses to verify ("may indicate", "should be checked").
 6. Write for a non-technical health decision-maker: short sentences, no jargon, no markdown tables.`;
 
-const BRIEF_TASK = (lang: string) => `Write a 2-minute decision brief for this county${lang === "fi" ? " in Finnish" : ""}. Use exactly these headings:
+const BRIEF_TASK = (lang: string) => lang === "fi" ? `Kirjoita tälle hyvinvointialueelle 2 minuutin päätöksentekotiivistelmä suomeksi. Käytä täsmälleen näitä otsikoita:
+**Keskeinen viesti** (1–2 virkettä: missä hoitopolun vaiheessa ero syntyy)
+**Mitä data näyttää** (3–4 luettelokohtaa, tärkeimmät erot koko maahan numeroin ja lähdeviittein)
+**Toimet seuraavan 90 päivän aikana** (3 tärkeintä toimenpidettä RECOMMENDED ACTIONS -listasta, vastuutaho ja mittari, viite [A#])
+**Mitä emme vielä näe** (1–2 kohtaa tietopuutteista, viite [D#])
+Enintään 230 sanaa.` : `Write a 2-minute decision brief for this county. Use exactly these headings:
 **Key message** (1–2 sentences: where in the pathway the gap emerges)
 **What the data shows** (3–4 bullet points, the most important gaps vs Finland with numbers and citations)
 **What to do in the next 90 days** (the top 3 actions from the RECOMMENDED ACTIONS, each with its owner and KPI, cite [A#])
@@ -52,7 +58,8 @@ function verifyNumbers(answer: string, context: string) {
 async function callGemini(system: string, contents: { role: string; parts: { text: string }[] }[]) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { text: null as string | null, model: null as string | null, error: "GEMINI_API_KEY not set" };
-  const models = [process.env.GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash"].filter(Boolean) as string[];
+  // Fallback chain: if a model is overloaded (503/429) or slow, try the next one so the live demo never stalls.
+  const models = [process.env.GEMINI_MODEL, "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"].filter(Boolean) as string[];
   let lastErr = "";
   for (const model of models) {
     try {
@@ -62,16 +69,21 @@ async function callGemini(system: string, contents: { role: string; parts: { tex
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents,
-          generationConfig: { temperature: 0.2, maxOutputTokens: 1400 },
+          generationConfig: { temperature: 0.2, maxOutputTokens: 8192 }, // thinking models spend part of this budget on reasoning
         }),
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(model === models[models.length - 1] ? 20000 : 18000),
       });
       if (!r.ok) {
         lastErr = `${model}: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`;
         continue;
       }
       const j = await r.json();
-      const text = (j.candidates?.[0]?.content?.parts || []).map((p: { text?: string }) => p.text || "").join("").trim();
+      const cand = j.candidates?.[0];
+      const text = (cand?.content?.parts || []).filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text || "").join("").trim();
+      if (cand?.finishReason === "MAX_TOKENS") {
+        lastErr = `${model}: truncated (MAX_TOKENS)`;
+        continue;
+      }
       if (text) return { text, model, error: null };
       lastErr = `${model}: empty response`;
     } catch (e) {
@@ -144,7 +156,7 @@ export async function POST(req: Request) {
   }
   const cited = [...new Set((text.match(/\[([A-Z]\d+[a-z]?)\]/g) || []).map((s) => s.slice(1, -1)))];
   // support multi-citations like [S3620, D3]
-  for (const m of text.match(/\[([^\]]+)\]/g) || []) for (const id of m.slice(1, -1).split(/[,;\s]+/)) if (/^[SDA]\d+[mf]?$/.test(id)) cited.push(id);
+  for (const m of text.match(/\[([^\]]+)\]/g) || []) for (const id of m.slice(1, -1).split(/[,;\s]+/)) if (/^[SDAP]\d+[mf]?$/.test(id)) cited.push(id);
   const uniq = [...new Set(cited)];
   const byId = new Map(sources.map((s) => [s.id, s]));
   return NextResponse.json({

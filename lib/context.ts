@@ -50,10 +50,11 @@ export function countyContext(code: string) {
   lines.push(`[${male.id}] Colorectal screening participation, men (${ym}): Finland ${fmt(nationalValue("screen_colorectal_male", ym))}%. [${female.id}] women: Finland ${fmt(nationalValue("screen_colorectal_female", ym))}%.`);
   sources.push(male, female);
   lines.push(
-    `PATHWAY STAGE SCORES (mean direction-adjusted z-score vs other counties; negative = behind): ` +
+    `[P1] PATHWAY STAGE SCORES (CancerPath AI calculation from the S-indicators above; mean direction-adjusted z-score vs other counties; negative = behind): ` +
       stages.map((s) => `${stageMeta(s.stage).label}: ${s.score == null ? "no public data" : s.score.toFixed(2)}`).join("; ") +
       (weak ? `. Weakest measured stage: ${stageMeta(weak.stage).label}.` : "")
   );
+  sources.push({ id: "P1", label: "CancerPath AI pathway stage scores (method: /sources)", url: "https://cancerpath-ai.vercel.app/sources" });
   lines.push(`RECOMMENDED ACTIONS (from the CancerPath AI evidence library):`);
   for (const a of acts) {
     lines.push(`[${a.id}] ${a.title}. Owner: ${a.owner}. KPI: ${a.kpi}. Roadmap actions: ${a.roadmap.join(", ")}. Evidence: ${a.evidence.map((e) => e.label).join("; ")}.`);

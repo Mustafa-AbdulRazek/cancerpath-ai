@@ -43,7 +43,7 @@ A **Google Gemini** analyst writes a **2-minute decision brief** (English or Fin
 Source badge on every number · indicator metadata links · reproducible ETL (`npm run data`) · dedicated limitations page (e.g. waiting data covers all specialties, small-county survival uncertainty, no causal claims) · public aggregate data only, no patient data.
 
 ## Tech
-Next.js 15, TypeScript, Tailwind, d3-geo SVG map, Google Gemini API (gemini-flash-latest), THL Sotkanet REST API, Statistics Finland boundaries. MIT licensed.
+Next.js 15, TypeScript, Tailwind, d3-geo SVG map, Google Gemini API (gemini-3.5-flash with lite fallbacks), THL Sotkanet REST API, Statistics Finland boundaries. MIT licensed.
 
 ## How we used Gemini (tech challenge)
 Gemini generates grounded county decision briefs and Q&A in English and Finnish from a structured, cited context. We add citation enforcement, a numeric hallucination check and a deterministic fallback.
