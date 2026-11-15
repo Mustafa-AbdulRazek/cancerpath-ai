@@ -1,3 +1,4 @@
+import { equityFor, QUADRANT_LABEL } from "./equity";
 import { HORIZON, screeningTrajectory, STATUS_LABEL, TARGET, TARGET_KEYS } from "./projection";
 import { data, EXCLUDED, SERIES_NOTES, SMR_CAVEAT, UUSIMAA_HUS, countyCorrelationExcluding, countyCorrelation, EQUITY_PAIRS, countyByCode, findingsFor, fmt, nationalSeries, stageMeta, stageScores, weakestStage, indicators, latestYear, nationalValue } from "./analysis";
 import { actionsFor, STRATEGY_URL, ROADMAP_URL, THL_2016_URL } from "./actions";
@@ -74,6 +75,9 @@ export function countyContext(code: string) {
   const dm = data.demand?.byCounty[code];
   if (dm && data.demand) lines.push(`[T2] Demand from ageing (projection, assumes constant age-specific rates): by ${data.demand.to} the 70+ population grows ${dm.pop70Growth}% and expected cancer deaths ${dm.deathsGrowth}% (Finland ${data.demand.national.deathsGrowth}%).`);
   sources.push({ id: "T2", label: "Statistics Finland population projection 2024 × age-specific cancer death rates (CancerPath AI calculation)", url: "https://pxdata.stat.fi/PxWeb/pxweb/en/StatFin/StatFin__vaenn/statfin_vaenn_pxt_14wx.px/" });
+  const eq = equityFor(code);
+  if (eq) lines.push(`[Q1] Need vs access (inverse care law check, county-level, not individuals): ${QUADRANT_LABEL[eq.quadrant]}; need ${eq.need.toFixed(2)} SD, access ${eq.access.toFixed(2)} SD vs other counties. Need = low income, cancer burden, mortality; access = GP waits, specialist waits, screening.`);
+  sources.push({ id: "Q1", label: "CancerPath AI need-vs-access check (THL Sotkanet, Statistics Finland)", url: "https://cancerpath-ai.vercel.app/" });
   sources.push({ id: "T1", label: "CancerPath AI projection to 2035 (linear trend of THL Sotkanet data)", url: "https://cancerpath-ai.vercel.app/sources" });
   lines.push(`RECOMMENDED ACTIONS (from the CancerPath AI evidence library):`);
   for (const a of acts) {

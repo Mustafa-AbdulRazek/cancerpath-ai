@@ -158,7 +158,7 @@ export async function POST(req: Request) {
   }
   const cited = [...new Set((text.match(/\[([A-Z]\d+[a-z]?)\]/g) || []).map((s) => s.slice(1, -1)))];
   // support multi-citations like [S3620, D3]
-  for (const m of text.match(/\[([^\]]+)\]/g) || []) for (const id of m.slice(1, -1).split(/[,;\s]+/)) if (/^[SDAPET]\d+[mf]?$/.test(id)) cited.push(id);
+  for (const m of text.match(/\[([^\]]+)\]/g) || []) for (const id of m.slice(1, -1).split(/[,;\s]+/)) if (/^[SDAPETQ]\d+[mf]?$/.test(id)) cited.push(id);
   const uniq = [...new Set(cited)];
   const byId = new Map(sources.map((s) => [s.id, s]));
   const check = tiedNumberCheck(text, context);

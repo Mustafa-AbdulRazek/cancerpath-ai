@@ -11,6 +11,9 @@ import {
 import { STRATEGY_URL, THL_2016_URL } from "@/lib/actions";
 import { survivalFirst } from "@/lib/brief";
 import { FACTS } from "@/lib/facts";
+import DelayChain from "@/components/DelayChain";
+import NeedAccessChart from "@/components/NeedAccessChart";
+import { equityAll, needAccessCorrelation, QUADRANT_COLOR, QUADRANT_LABEL } from "@/lib/equity";
 import { HORIZON, nationalSummary, screeningTrajectory, STATUS_COLOR, STATUS_LABEL, TARGET } from "@/lib/projection";
 
 const zColor = (z?: number) => (z == null ? "#eef0f3" : z <= -1 ? "#b42318" : z <= -0.5 ? "#f2b8b5" : z < 0.5 ? "#e5e7eb" : z < 1 ? "#99d5cf" : "#0f766e");
@@ -52,6 +55,9 @@ export default function Home() {
       ),
     };
   };
+  const eqRows = equityAll().map((r) => ({ ...r, color: QUADRANT_COLOR[r.quadrant], label: QUADRANT_LABEL[r.quadrant] }));
+  const eqR = needAccessCorrelation();
+  const inverse = eqRows.filter((r) => r.quadrant === "inverse").map((r) => r.name);
   const modes: MapMode[] = [
     {
       key: "weakest",
@@ -65,6 +71,13 @@ export default function Home() {
           return [c.code, { code: c.code, name: c.name, hatch: noReferral.has(c.code), fill: clear ? stageMeta(w!.stage).color : "#d9dde2", label: clear ? `Furthest behind: ${stageMeta(w!.stage).label}` : "No clear gap", sub: noReferral.has(c.code) ? "Referral step not measurable" : undefined }];
         })
       ),
+    },
+    {
+      key: "need-access",
+      label: "Need vs access (inverse care law)",
+      legend: (["inverse", "high-need", "low-access", "fair"] as const).map((q) => ({ color: QUADRANT_COLOR[q], label: QUADRANT_LABEL[q] })),
+      note: "Need: low-income rate, cancer burden, cancer mortality. Access: GP waits, specialist waits, screening. County-level comparison, not individuals.",
+      datum: Object.fromEntries(eqRows.map((r) => [r.code, { code: r.code, name: counties.find((c) => c.code === r.code)!.name, fill: r.color, label: r.label, sub: `need ${r.need.toFixed(2)}, access ${r.access.toFixed(2)} (SD vs other counties)` }])),
     },
     ...(["screen_cervical"] as const).map((key): MapMode => ({
       key: "traj-" + key,
@@ -182,6 +195,25 @@ export default function Home() {
             </p>
           </li>
         </ol>
+      </Section>
+
+      <Section title="Two lenses from the AstraZeneca briefing" aside={<span className="text-xs text-[var(--muted)]">H. Kuitunen, Espoo 13 Nov 2026</span>}>
+        <div className="space-y-8">
+          <div>
+            <h3 className="font-medium">Where delays happen: 8 steps from symptoms to treatment</h3>
+            <p className="mb-3 mt-1 text-sm text-[var(--muted)]">Public data only reaches the early steps, and only through proxies. The steps that decide time to treatment are not visible by county.</p>
+            <DelayChain />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
+            <div className="space-y-2 text-sm">
+              <h3 className="text-base font-medium">Inverse care law check: does access follow need?</h3>
+              <p className="text-[var(--muted)]">The briefing warned that parallel public, occupational and private routes can create an <b>inverse care law</b>: access is lowest where need is highest. We compare each county&apos;s <b>need</b> (low-income rate, cancer burden, cancer mortality) with its <b>access</b> (GP waits, specialist waits, screening).</p>
+              <p>Across counties, need and access are {eqR > 0.2 ? "positively linked" : eqR < -0.2 ? "negatively linked" : "not linked"} (r = {Math.abs(eqR) < 0.005 ? "0.00" : eqR.toFixed(2)}): access does not rise with need. {inverse.length ? <>Highest need with the lowest access: <b>{inverse.join(", ")}</b>.</> : null}</p>
+              <p className="text-xs text-[var(--muted)]">County-level comparison of public indicators (THL Sotkanet, Statistics Finland), so it shows where to look, not individual inequality. The individual view (public vs occupational route, income group) is what the county pilot adds with its own data. Click a dot to open the county.</p>
+            </div>
+            <NeedAccessChart rows={eqRows} />
+          </div>
+        </div>
       </Section>
 
       <Section title="Recommendations at national level" aside={<span className="text-xs text-[var(--muted)]">for STM, THL and FICAN</span>}>

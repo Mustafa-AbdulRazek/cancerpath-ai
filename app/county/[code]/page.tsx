@@ -10,6 +10,8 @@ import {
   SCREEN_BAND, series, SERIES_NOTES, SMR_CAVEAT, sourceLabel, stageMeta, stageRank, stageScores, STAGES, value,
 } from "@/lib/analysis";
 import { countySummary } from "@/lib/brief";
+import DelayChain from "@/components/DelayChain";
+import { equityFor, QUADRANT_COLOR, QUADRANT_LABEL } from "@/lib/equity";
 import TrajectoryChart from "@/components/TrajectoryChart";
 import { HORIZON, MIN_YEARS, reachLabel, screeningTrajectory, STATUS_COLOR, STATUS_LABEL, survivalGapTrend, TARGET, TARGET_KEYS } from "@/lib/projection";
 
@@ -99,6 +101,30 @@ export default async function CountyPage({ params }: { params: Promise<{ code: s
           })}
         </ol>
       </section>
+
+      <details className="rounded-[6px] border border-[var(--line)] bg-white p-4">
+        <summary className="cursor-pointer text-sm font-medium">Where delays can happen: the 8 steps from symptoms to treatment, and what public data can see</summary>
+        <div className="mt-3">
+          <DelayChain values={{
+            screen_cervical: `${c.short}: cervical screening ${fmt(value("screen_cervical", code))}%`,
+            phc_wait7: `${c.short}: ${fmt(value("phc_wait7", code))}% wait > 7 days`,
+            spec_wait6m: value("spec_wait6m", code) != null ? `${c.short}: ${fmt(value("spec_wait6m", code))} per 10,000` : `${c.short}: no reliable data`,
+          }} />
+        </div>
+      </details>
+
+      {(() => {
+        const eq = equityFor(code);
+        if (!eq) return null;
+        return (
+          <section className="flex flex-wrap items-center gap-x-6 gap-y-1 rounded-[6px] border border-[var(--line)] bg-white px-4 py-3 text-sm">
+            <span className="font-medium">Need vs access</span>
+            <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: QUADRANT_COLOR[eq.quadrant] }} />{QUADRANT_LABEL[eq.quadrant]}</span>
+            <span className="text-[var(--muted)]">need {eq.need > 0 ? "+" : ""}{eq.need.toFixed(2)} · access {eq.access > 0 ? "+" : ""}{eq.access.toFixed(2)} (SD vs other counties)</span>
+            {eq.quadrant === "inverse" && <span className="text-[var(--worse)]">Inverse care law signal: higher need than most counties, but lower access.</span>}
+          </section>
+        );
+      })()}
 
       <section className="rounded-[6px] border border-[var(--accent)] bg-[var(--accent-soft)] p-5">
         <div className="text-sm font-medium text-[var(--accent)]">Do this first</div>
